@@ -58,6 +58,51 @@ blueprint:
             - label: Slot 2
               value: "2"
 
+    update_start_time:
+      name: Update Start Time
+      description: "Time of day when updates should start (disables updates outside this range to save battery)."
+      default: "00:00:00"
+      selector:
+        time: {}
+
+    update_end_time:
+      name: Update End Time
+      description: "Time of day when updates should stop."
+      default: "23:59:59"
+      selector:
+        time: {}
+
+    update_days:
+      name: Allowed Days
+      description: "Days of the week when updates are allowed."
+      default:
+        - mon
+        - tue
+        - wed
+        - thu
+        - fri
+        - sat
+        - sun
+      selector:
+        select:
+          multiple: true
+          custom_value: false
+          options:
+            - label: Monday
+              value: mon
+            - label: Tuesday
+              value: tue
+            - label: Wednesday
+              value: wed
+            - label: Thursday
+              value: thu
+            - label: Friday
+              value: fri
+            - label: Saturday
+              value: sat
+            - label: Sunday
+              value: sun
+
 variables:
   target_device: !input target_device
   temperature_entity: !input source_temperature
@@ -101,6 +146,10 @@ triggers:
     event: start
 
 conditions:
+  - condition: time
+    after: !input update_start_time
+    before: !input update_end_time
+    weekday: !input update_days
   - condition: template
     value_template: >
       {{ trigger.id == 'ha_started'
