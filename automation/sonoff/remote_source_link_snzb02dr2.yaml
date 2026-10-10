@@ -108,8 +108,12 @@ conditions:
   - condition: template
     value_template: >
       {{ is_number(states(temperature_entity))
-         and state_attr(temperature_entity, 'unit_of_measurement') in ['°C', '°F', 'K']
-         and -20 <= states(temperature_entity) | float <= 60
+         and ((state_attr(temperature_entity, 'unit_of_measurement') == '°C'
+               and -20 <= states(temperature_entity) | float <= 60)
+             or (state_attr(temperature_entity, 'unit_of_measurement') == '°F'
+                 and -4 <= states(temperature_entity) | float <= 140)
+             or (state_attr(temperature_entity, 'unit_of_measurement') == 'K'
+                 and 253.15 <= states(temperature_entity) | float <= 333.15 ))
          and temperature_entity not in (device_entities(target_device) or [])
          and humidity_entity not in (device_entities(target_device) or [])
          and device_attr(target_device, 'manufacturer') == 'SONOFF'
