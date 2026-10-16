@@ -5,8 +5,10 @@ blueprint:
     Synchronizes an external temperature reading with a SONOFF TRVZB
     thermostatic radiator valve connected through ZHA or Zigbee2MQTT. The
     reading is applied whenever the valve's external temperature mode is
-    enabled, immediately and on each source update. Temperature values in
-    Celsius, Fahrenheit, or Kelvin are automatically converted to Celsius.
+    enabled, immediately and on each source update. Optionally, the reading
+    can also be force-synced every N minutes, regardless of source updates.
+    Temperature values in Celsius, Fahrenheit, or Kelvin are automatically
+    converted to Celsius.
   domain: automation
   input:
     target_device:
@@ -30,10 +32,24 @@ blueprint:
           filter:
             domain: sensor
             device_class: temperature
+    force_sync_interval:
+      name: Force sync interval
+      description: >
+        Additionally send the current external temperature to the TRV every N
+        minutes, even when the source has not changed. Set to 0 to disable.
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 1440
+          step: 1
+          unit_of_measurement: min
+          mode: box
 
 variables:
   target_device: !input target_device
   source_entity: !input source_entity
+  force_sync_interval: !input force_sync_interval
   target_integration: >
     {% set ns = namespace(value='') %}
     {% for identifier in (device_attr(target_device, 'identifiers') or []) %}
@@ -79,11 +95,17 @@ triggers:
   - trigger: event
     event_type: state_changed
     id: external_temperature_sensor_enabled
+  - trigger: time_pattern
+    minutes: "/1"
+    id: force_sync
 
 conditions:
   - condition: template
     value_template: >
-      {{ is_number(states(source_entity))
+      {% set interval = force_sync_interval | int(0) %}
+      {{ (trigger.id != 'force_sync'
+          or (interval > 0 and (now().timestamp() | int // 60) % interval == 0))
+         and is_number(states(source_entity))
          and state_attr(source_entity, 'unit_of_measurement') in ['°C', '°F', 'K']
          and source_entity not in (device_entities(target_device) or [])
          and device_attr(target_device, 'manufacturer') == 'SONOFF'
@@ -92,7 +114,7 @@ conditions:
                and zha_external_temperature_sensor_switch | trim != ''
                and zha_external_temperature_sensor_value | trim != ''
                and is_state(zha_external_temperature_sensor_switch, 'on')
-               and (trigger.id == 'source_temperature'
+               and (trigger.id in ['source_temperature', 'force_sync']
                     or (trigger.event.data.entity_id == zha_external_temperature_sensor_switch
                         and trigger.event.data.new_state is not none
                         and trigger.event.data.new_state.state == 'on')))
@@ -100,7 +122,7 @@ conditions:
                   and device_attr(target_device, 'model') == 'Zigbee thermostatic radiator valve'
                   and mqtt_external_temperature_input | trim != ''
                   and mqtt_temperature_sensor_select | trim != ''
-                  and trigger.id == 'source_temperature')) }}
+                  and trigger.id in ['source_temperature', 'force_sync'])) }}
 
 actions:
   - variables:
@@ -126,7 +148,7 @@ actions:
               {{ target_integration | trim == 'mqtt'
                  and mqtt_external_temperature_input | trim != ''
                  and mqtt_temperature_sensor_select | trim != ''
-                 and trigger.id == 'source_temperature' }}
+                 and trigger.id in ['source_temperature', 'force_sync'] }}
         sequence:
           - action: number.set_value
             target:
