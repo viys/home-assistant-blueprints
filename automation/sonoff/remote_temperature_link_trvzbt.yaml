@@ -85,12 +85,6 @@ triggers:
 conditions:
   - condition: template
     value_template: >
-      {% set temperature = states(source_entity) | float %}
-      {% set unit = state_attr(source_entity, 'unit_of_measurement') %}
-      {% set external_temperature =
-        ((temperature - 32) * 5 / 9 if unit == '°F'
-         else temperature - 273.15 if unit == 'K'
-         else temperature) | round(1) %}
       {{ is_number(states(source_entity))
          and state_attr(source_entity, 'unit_of_measurement') in ['°C', '°F', 'K']
          and source_entity not in (device_entities(target_device) or [])
@@ -99,7 +93,6 @@ conditions:
                and device_attr(target_device, 'model') == 'TRV-ZBT'
                and zha_temperature_sensor_switch | trim != ''
                and zha_external_temperature_sensor_value | trim != ''
-               and -10 <= external_temperature <= 50
                and is_state(zha_temperature_sensor_switch, 'on')
                and (trigger.id == 'source_temperature'
                     or (trigger.event.data.entity_id == zha_temperature_sensor_switch | trim
@@ -109,7 +102,6 @@ conditions:
                   and device_attr(target_device, 'model') == 'Zigbee thermostatic radiator valve'
                   and mqtt_external_temperature_input | trim != ''
                   and mqtt_temperature_sensor_select | trim != ''
-                  and 0 < external_temperature <= 99.9
                   and trigger.id == 'source_temperature')) }}
 
 actions:
