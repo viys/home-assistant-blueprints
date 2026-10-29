@@ -2,6 +2,8 @@
 
 Automation blueprints for SONOFF devices in Home Assistant.
 
+For official import and re-import instructions, see [Using automation blueprints](https://www.home-assistant.io/docs/automation/using_blueprints/).
+
 ## Import a blueprint
 
 ### Option 1: Open the import dialog in Home Assistant
@@ -13,6 +15,14 @@ Select an **Import blueprint** button below. It opens the Blueprint import dialo
 1. Copy the **Raw YAML** URL for the blueprint you want below.
 2. In Home Assistant, go to **Settings > Automations & scenes > Blueprints**.
 3. Select **Import Blueprint**, paste the URL, select **Preview**, then select **Import Blueprint**.
+
+## Update an imported blueprint
+
+1. In Home Assistant, go to **Settings > Automations & scenes > Blueprints**.
+2. Open the three-dot menu for the blueprint and select **Re-import blueprint**.
+3. Select **Re-import** to replace the imported copy with the latest version from its source URL.
+
+If the updated blueprint changes its inputs, review and adjust any automations that use it. Re-import is available only for blueprints with a source URL.
 
 ## SONOFF blueprints
 
