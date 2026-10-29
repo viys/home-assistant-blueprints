@@ -86,6 +86,36 @@ variables:
     {% endif %}
   has_extra_sources: >
     {{ source_entity_2 | trim != '' or source_entity_3 | trim != '' }}
+  source_1_valid: >
+    {{ source_entity_1 | trim != ''
+       and source_entity_1 not in (device_entities(target_device) or [])
+       and is_number(states(source_entity_1))
+       and state_attr(source_entity_1, 'unit_of_measurement') in ['°C', '°F', 'K']
+       and -273.15 <= ((states(source_entity_1) | float - 32) * 5 / 9
+                       if state_attr(source_entity_1, 'unit_of_measurement') == '°F'
+                       else states(source_entity_1) | float - 273.15
+                       if state_attr(source_entity_1, 'unit_of_measurement') == 'K'
+                       else states(source_entity_1) | float) <= 327.67 }}
+  source_2_valid: >
+    {{ source_entity_2 | trim != ''
+       and source_entity_2 not in (device_entities(target_device) or [])
+       and is_number(states(source_entity_2))
+       and state_attr(source_entity_2, 'unit_of_measurement') in ['°C', '°F', 'K']
+       and -273.15 <= ((states(source_entity_2) | float - 32) * 5 / 9
+                       if state_attr(source_entity_2, 'unit_of_measurement') == '°F'
+                       else states(source_entity_2) | float - 273.15
+                       if state_attr(source_entity_2, 'unit_of_measurement') == 'K'
+                       else states(source_entity_2) | float) <= 327.67 }}
+  source_3_valid: >
+    {{ source_entity_3 | trim != ''
+       and source_entity_3 not in (device_entities(target_device) or [])
+       and is_number(states(source_entity_3))
+       and state_attr(source_entity_3, 'unit_of_measurement') in ['°C', '°F', 'K']
+       and -273.15 <= ((states(source_entity_3) | float - 32) * 5 / 9
+                       if state_attr(source_entity_3, 'unit_of_measurement') == '°F'
+                       else states(source_entity_3) | float - 273.15
+                       if state_attr(source_entity_3, 'unit_of_measurement') == 'K'
+                       else states(source_entity_3) | float) <= 327.67 }}
 
 triggers:
   - trigger: event
@@ -113,36 +143,7 @@ conditions:
          and zha_external_temperature_sensor_switch | trim != ''
          and is_state(zha_external_temperature_sensor_switch, 'on')
          and device_attr(target_device, 'manufacturer') == 'SONOFF'
-         and device_attr(target_device, 'model') == 'TP-WGZBA'
-         and source_entity_1 | trim != ''
-         and source_entity_1 not in (device_entities(target_device) or [])
-         and is_number(states(source_entity_1))
-         and state_attr(source_entity_1, 'unit_of_measurement') in ['°C', '°F', 'K']
-         and -273.15 <= ((states(source_entity_1) | float - 32) * 5 / 9
-                         if state_attr(source_entity_1, 'unit_of_measurement') == '°F'
-                         else states(source_entity_1) | float - 273.15
-                         if state_attr(source_entity_1, 'unit_of_measurement') == 'K'
-                         else states(source_entity_1) | float) <= 327.67
-         and (not (supports_multi_remote_temperature | bool)
-              or source_entity_2 | trim == ''
-              or (source_entity_2 not in (device_entities(target_device) or [])
-                  and is_number(states(source_entity_2))
-                  and state_attr(source_entity_2, 'unit_of_measurement') in ['°C', '°F', 'K']
-                  and -273.15 <= ((states(source_entity_2) | float - 32) * 5 / 9
-                                  if state_attr(source_entity_2, 'unit_of_measurement') == '°F'
-                                  else states(source_entity_2) | float - 273.15
-                                  if state_attr(source_entity_2, 'unit_of_measurement') == 'K'
-                                  else states(source_entity_2) | float) <= 327.67))
-         and (not (supports_multi_remote_temperature | bool)
-              or source_entity_3 | trim == ''
-              or (source_entity_3 not in (device_entities(target_device) or [])
-                  and is_number(states(source_entity_3))
-                  and state_attr(source_entity_3, 'unit_of_measurement') in ['°C', '°F', 'K']
-                  and -273.15 <= ((states(source_entity_3) | float - 32) * 5 / 9
-                                  if state_attr(source_entity_3, 'unit_of_measurement') == '°F'
-                                  else states(source_entity_3) | float - 273.15
-                                  if state_attr(source_entity_3, 'unit_of_measurement') == 'K'
-                                  else states(source_entity_3) | float) <= 327.67)) }}
+         and device_attr(target_device, 'model') == 'TP-WGZBA' }}
 
 actions:
   - choose:
@@ -153,7 +154,7 @@ actions:
           - choose:
               - conditions:
                   - condition: template
-                    value_template: "{{ full_sync | bool or trigger.event.data.entity_id == source_entity_1 }}"
+                    value_template: "{{ (source_1_valid | bool) and (full_sync | bool or trigger.event.data.entity_id == source_entity_1) }}"
                 sequence:
                   - action: zha.set_zigbee_cluster_attribute
                     data:
@@ -171,7 +172,7 @@ actions:
           - choose:
               - conditions:
                   - condition: template
-                    value_template: "{{ full_sync | bool or trigger.event.data.entity_id == source_entity_2 }}"
+                    value_template: "{{ (source_entity_2 | trim == '' or source_2_valid | bool) and (full_sync | bool or trigger.event.data.entity_id == source_entity_2) }}"
                 sequence:
                   - action: zha.set_zigbee_cluster_attribute
                     data:
@@ -193,7 +194,7 @@ actions:
           - choose:
               - conditions:
                   - condition: template
-                    value_template: "{{ full_sync | bool or trigger.event.data.entity_id == source_entity_3 }}"
+                    value_template: "{{ (source_entity_3 | trim == '' or source_3_valid | bool) and (full_sync | bool or trigger.event.data.entity_id == source_entity_3) }}"
                 sequence:
                   - action: zha.set_zigbee_cluster_attribute
                     data:
@@ -220,7 +221,7 @@ actions:
           - choose:
               - conditions:
                   - condition: template
-                    value_template: "{{ full_sync | bool or trigger.event.data.entity_id == source_entity_1 }}"
+                    value_template: "{{ (source_1_valid | bool) and (full_sync | bool or trigger.event.data.entity_id == source_entity_1) }}"
                 sequence:
                   - action: zha.set_zigbee_cluster_attribute
                     data:
@@ -236,4 +237,4 @@ actions:
                              else value - 273.15 if unit == 'K'
                              else value) * 100) | round(0) | int }}
 
-mode: restart
+mode: queued
