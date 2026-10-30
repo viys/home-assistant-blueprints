@@ -6,12 +6,19 @@ This repository contains Home Assistant automation blueprints for SONOFF devices
 
 ## Development and Validation
 
-There is no build system or automated test suite. Validate changes with focused checks:
+There is no build system. Run the offline test suite and focused checks:
 
 ```powershell
+python -m pip install -r config/testing/requirements.txt
+python -m unittest discover -s tests -v
 git diff --check                 # detect whitespace errors
 Get-Content automation/sonoff/<blueprint>.yaml
 ```
+
+GitHub Actions runs blueprint validation and the test suite on Python 3.11–3.14
+for pushes and pull requests. Add regression tests under `tests/test_*.py` when
+changing behavior. Structural and behavior checks cover every current blueprint.
+See `tests/README.md` for scope and runtime limitations.
 
 Import the changed blueprint into a Home Assistant test instance, create an automation from it, and exercise its triggers and service calls for each declared integration (for example, ZHA and Zigbee2MQTT). Check the minimum Home Assistant version and selectors against the intended target version.
 

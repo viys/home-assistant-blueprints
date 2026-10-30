@@ -39,6 +39,16 @@ All SONOFF blueprints are under [`automation/sonoff`](automation/sonoff).
 | **Sync Remote Temperature to TRV-ZBT** | <a href="https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fviys%2Fhome-assistant-blueprints%2Fblob%2Fmaster%2Fautomation%2Fsonoff%2Fremote_temperature_link_trvzbt.yaml"><img src="https://my.home-assistant.io/badges/blueprint_import.svg" alt="Import blueprint" height="28"></a> | [Raw YAML](https://raw.githubusercontent.com/viys/home-assistant-blueprints/master/automation/sonoff/remote_temperature_link_trvzbt.yaml) |
 | **Sync Remote Temperature to TRVZB** | <a href="https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fviys%2Fhome-assistant-blueprints%2Fblob%2Fmaster%2Fautomation%2Fsonoff%2Fremote_temperature_link_trvzb.yaml"><img src="https://my.home-assistant.io/badges/blueprint_import.svg" alt="Import blueprint" height="28"></a> | [Raw YAML](https://raw.githubusercontent.com/viys/home-assistant-blueprints/master/automation/sonoff/remote_temperature_link_trvzb.yaml) |
 
+The SNZB-02DR2 blueprint requires Home Assistant 2025.3 or newer. Temperature
+and optional humidity synchronize independently; updates received during a send
+are combined using each source's latest reading. Writes are serialized within
+one automation; avoid running separate automations against the same device
+concurrently, including automations for different remote slots.
+Home Assistant can continue after supported service errors, but raw ZHA
+exceptions/timeouts can still stop a run and leave pending readings unsent.
+The blueprint cannot impose a hard service-call timeout or check ZCL failure
+statuses that the ZHA service does not expose.
+
 ### Target control
 
 | Blueprint | Import | Links |
@@ -49,3 +59,11 @@ All SONOFF blueprints are under [`automation/sonoff`](automation/sonoff).
 
 - Importing a blueprint installs its definition. Create and configure an automation from the imported blueprint before it can run.
 - Requirements vary by blueprint. Read the input descriptions in Home Assistant before creating the automation.
+
+## Tests
+
+GitHub Actions validates all blueprint definitions and catalogue links, and
+runs the test suite on Python 3.11–3.14 for pushes and pull requests. See
+[test instructions and coverage scope](tests/README.md) for local commands,
+manual CI runs, simulated YAML coverage reports, and the distinction between
+offline checks and device testing.
