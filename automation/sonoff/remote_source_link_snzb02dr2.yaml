@@ -93,11 +93,15 @@ variables:
        | default('', true) }}
 
 triggers:
-  - trigger: state
-    entity_id: !input source_temperature
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: !input source_temperature
     id: temperature_changed
-  - trigger: state
-    entity_id: !input source_humidity
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: !input source_humidity
     id: humidity_changed
   - trigger: homeassistant
     id: ha_started
