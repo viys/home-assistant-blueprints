@@ -74,6 +74,7 @@ class CoverageCommentTests(unittest.TestCase):
         # Pass JSON through stdin, never through shell-expanded command text.
         branch_hits = overrides.pop("branch_hits", 92)
         report = dict(tests_passed=True, tests_run=62, coverage_passed=branch_hits >= 80,
+                      changed_files=["automation/sonoff/example.yaml"],
                       gates=[dict(name=name, covered=covered, total=total,
                                   percentage=covered * 100 / total if total else None,
                                   minimum=minimum, passed=not total or covered * 100 >= total * minimum)
@@ -105,7 +106,9 @@ class CoverageCommentTests(unittest.TestCase):
         self.assertIn("<details>", call["body"])
         self.assertIn("```diff", call["body"])
         self.assertLess(len(call["body"].split("<details>")[0]), 750)
-        self.assertIn("https://github.com/owner/repo/actions/runs/101/artifacts/42", call["body"])
+        self.assertNotIn("Full HTML/JSON report", call["body"])
+        self.assertNotIn("Workflow run", call["body"])
+        self.assertNotIn("| Blueprint |", call["body"])
 
     def test_updates_only_its_own_existing_bot_comment(self):
         """Do not edit human comments even when they contain the report marker."""
@@ -125,13 +128,13 @@ class CoverageCommentTests(unittest.TestCase):
         self.assertIn("70.0%", body)
         self.assertIn("❌ Project coverage", body)
 
-    def test_missing_report_posts_diagnostic_and_workflow_link(self):
+    def test_missing_report_posts_diagnostic(self):
         """Setup failure before report creation still gets a useful PR update."""
         # Do not invent a successful coverage percentage when no artifact exists.
         body = self.scenario(result="failure", hasReport=False, artifactId="")["calls"][0]["body"]
         self.assertIn("report unavailable", body)
         self.assertIn("**FAIL**", body)
-        self.assertIn("Workflow run", body)
+        self.assertIn("https://github.com/owner/repo/actions/runs/101", body)
         self.assertNotIn("Full HTML/JSON report", body)
 
     def test_outdated_commit_and_closed_pr_are_not_updated(self):
@@ -142,16 +145,16 @@ class CoverageCommentTests(unittest.TestCase):
             self.assertEqual(result["calls"], [])
             self.assertTrue(result["messages"])
 
-    def test_large_report_is_bounded_and_retains_download_link(self):
-        """Keep comments under the API size limit with a complete-report link."""
+    def test_large_changed_report_is_bounded(self):
+        """Keep changed-file details under the API size limit."""
         # Artifact data remains complete even when the inline summary is shortened.
         report = dict(tests_passed=True, tests_run=1, gates=[], opportunities=[
-            dict(file=f"automation/{index}-" + "x" * 1000 + ".yaml", kind="action", hits=0)
+            dict(file=f"automation/{index}-" + "x" * 1000 + ".yaml", kind="action", hits=0, changed=True)
             for index in range(1000)])
         body = self.scenario(report=report)["calls"][0]["body"]
         self.assertLess(len(body), 65536)
-        self.assertIn("More files in the full report", body)
-        self.assertIn("Full HTML/JSON report", body)
+        self.assertIn("950 more changed blueprints", body)
+        self.assertNotIn("Full HTML/JSON report", body)
 
     def test_empty_changed_denominator_remains_not_applicable(self):
         """Do not display a perfect changed percentage when no changed paths exist."""
@@ -162,6 +165,21 @@ class CoverageCommentTests(unittest.TestCase):
         body = self.scenario(report=report)["calls"][0]["body"]
         self.assertIn("Changed coverage: actions **N/A**, branches **N/A**", body)
         self.assertNotIn("100.0%", body)
+
+    def test_only_changed_blueprints_have_file_details(self):
+        """Keep unrelated blueprints out of the PR's file list."""
+        # Explicit changed paths also retain files changed only outside measured blocks.
+        report = dict(tests_passed=True, tests_run=1, gates=[],
+                      changed_files=["automation/sonoff/mine.yaml"], opportunities=[
+                          dict(file="automation/sonoff/mine.yaml", kind="action", hits=1),
+                          dict(file="automation/sonoff/other.yaml", kind="action", hits=0)])
+        body = self.scenario(report=report)["calls"][0]["body"]
+        self.assertIn("`mine.yaml`", body)
+        self.assertNotIn("other.yaml", body)
+        report["changed_files"] = []
+        body = self.scenario(report=report)["calls"][0]["body"]
+        self.assertNotIn("Changed blueprints", body)
+        self.assertNotIn("mine.yaml", body)
 
     def test_invalid_json_uses_diagnostic_instead_of_partial_metrics(self):
         """A malformed report does not prevent an informative comment update."""

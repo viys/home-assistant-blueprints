@@ -36,11 +36,12 @@ The shared checks appear under the caller's **Checks** job:
 - `Simulated YAML coverage`: records executed action blocks and branch outcomes,
   publishes a job summary, and uploads the `blueprint-coverage` report artifact.
 - `PR coverage report`: creates or updates one bot comment with the coverage
-  summary, threshold results, tested commit, and full report download link.
+  summary, threshold results, and tested commit.
 
-The PR comment shows a short status overview. Threshold counts and per-file
-coverage are collapsed under **Additional details and impacted files**; full
-source-level diagnostics remain in the downloadable HTML/JSON report. It does
+The PR comment shows a short status overview. Threshold counts and a compact
+list of only the changed blueprints are collapsed under **Coverage details**.
+No file list appears when no blueprints changed. Full source-level diagnostics
+remain in the HTML/JSON artifact available from the Actions run. It does
 not claim a coverage increase without a measured baseline coverage report.
 
 Automatic comments run for pull requests from branches in this repository,

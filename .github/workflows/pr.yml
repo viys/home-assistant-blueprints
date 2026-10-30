@@ -54,7 +54,6 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           COVERAGE_RESULT: ${{ needs.checks.result }}
-          REPORT_ARTIFACT_ID: ${{ steps.report-metadata.outputs.artifact-id }}
         with:
           script: |
             const fs = require('node:fs');
@@ -73,10 +72,6 @@ jobs:
               core.warning(`Cannot read coverage data: ${error.message}`);
             }
             const status = process.env.COVERAGE_RESULT === 'success' ? 'PASS' : 'FAIL';
-            const artifactId = process.env.REPORT_ARTIFACT_ID;
-            const links = artifactId
-              ? `[Full HTML/JSON report](${runUrl}/artifacts/${artifactId}) · [Workflow run](${runUrl})`
-              : `[Workflow run](${runUrl})`;
             const commitUrl = `${process.env.GITHUB_SERVER_URL}/${owner}/${repo}/commit/${pull.head.sha}`;
             let content = '⚠️ Coverage report unavailable. Check the workflow logs for details.';
             if (report) {
@@ -108,23 +103,27 @@ jobs:
                 const prefix = gate?.total ? (gate.passed ? '+' : '-') : ' ';
                 diff.push(`${prefix} ${label.padEnd(23)}${String(gate?.covered ?? '-').padStart(6)} ${String(gate?.total ?? '-').padStart(7)} ${rate(name).padStart(9)} ${gate ? `${gate.minimum}%` : 'N/A'}`);
               }
+              // Include only PR-modified blueprints, even for metadata-only changes.
+              const changedFiles = new Set(report.changed_files ?? report.opportunities
+                .filter(point => point.changed).map(point => point.file));
               const files = new Map();
               for (const point of report.opportunities) {
+                if (!changedFiles.has(point.file)) continue;
                 const counts = files.get(point.file) || [0, 0, 0, 0];
                 const offset = point.kind === 'action' ? 0 : 2;
                 counts[offset] += Number(point.hits > 0);
                 counts[offset + 1] += 1;
                 files.set(point.file, counts);
               }
-              const table = ['| Blueprint | Actions | Branches |', '| --- | ---: | ---: |'];
+              const details = files.size ? ['**Changed blueprints**', ''] : [];
               for (const [file, counts] of [...files].sort().slice(0, 50)) {
                 const label = file.split('/').pop().replace(/[|`<>]/g, '').slice(0, 120);
-                table.push(`| ${label} | ${counts[0]}/${counts[1]} | ${counts[2]}/${counts[3]} |`);
+                details.push(`- \`${label}\` — actions **${counts[0]}/${counts[1]}**, branches **${counts[2]}/${counts[3]}**`);
               }
-              if (files.size > 50) table.push('| More files in the full report | … | … |');
-              content = `${lines.join('  \n')}\n\n<details>\n<summary>Additional details and impacted files</summary>\n\n\`\`\`diff\n${diff.join('\n')}\n\`\`\`\n\n${table.join('\n')}\n\n</details>`;
+              if (files.size > 50) details.push(`- … ${files.size - 50} more changed blueprints.`);
+              content = `${lines.join('  \n')}\n\n<details>\n<summary>Coverage details</summary>\n\n\`\`\`diff\n${diff.join('\n')}\n\`\`\`\n\n${details.join('\n')}\n\n</details>`;
             }
-            const body = `${marker}\n## [Blueprint Coverage Report](${runUrl}) · **${status}**\n\n${content}\n\n📊 ${links}\n\n<sub>Simulated YAML execution only; not real Home Assistant or device coverage.</sub>`;
+            const body = `${marker}\n## [Blueprint Coverage Report](${runUrl}) · **${status}**\n\n${content}\n\n<sub>Simulated YAML execution only; not real Home Assistant or device coverage.</sub>`;
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner, repo, issue_number: pull.number, per_page: 100,
             });
