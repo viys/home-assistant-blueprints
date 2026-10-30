@@ -63,7 +63,7 @@ statuses that the ZHA service does not expose.
 ## Tests
 
 GitHub Actions validates all blueprint definitions and catalogue links, and
-runs the test suite on Python 3.11–3.14 for pull requests. See
+runs the test suite on Python 3.11–3.14 for pushes and pull requests. See
 [test instructions and coverage scope](tests/README.md) for local commands,
 simulated YAML coverage reports and the distinction between
 offline checks and device testing.

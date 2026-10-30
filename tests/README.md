@@ -22,9 +22,11 @@ CI runners provide Node; Python-only local environments skip those checks.
 
 ## GitHub Actions
 
-The `CI` workflow runs only on pull requests, including new commits pushed to
-an open PR. Pushes without a PR do not start CI, and there is no manual-dispatch
-entry point. It shows these checks in the pull request:
+`CI` (`ci.yml`) runs on pushes; `PR CI` (`pr.yml`) runs on pull requests.
+Both call `checks.yml` for the same validation, tests, and coverage gates.
+Only `PR CI` contains a comment job, so push runs do not list an irrelevant
+skipped comment job. There is no manual-dispatch entry point.
+The shared checks appear under the caller's **Checks** job:
 
 - `Blueprint validation`: checks every blueprint's YAML, duplicate keys,
   required structure, declared input references, Jinja syntax, and README
@@ -36,16 +38,26 @@ entry point. It shows these checks in the pull request:
 - `PR coverage report`: creates or updates one bot comment with the coverage
   summary, threshold results, tested commit, and full report download link.
 
+The PR comment shows a short status overview. Threshold counts and per-file
+coverage are collapsed under **Additional details and impacted files**; full
+source-level diagnostics remain in the downloadable HTML/JSON report. It does
+not claim a coverage increase without a measured baseline coverage report.
+
 Automatic comments run for pull requests from branches in this repository,
 including when coverage gates fail. Fork pull requests retain the read-only
 test jobs, job summary, and report artifact; they skip automatic comments
 because their standard workflow token cannot write PR comments. No personal
 access token is required. Test jobs keep read-only permissions; a separate job
 publishes report data without checking out or executing the test code.
+The comment job looks up the report artifact in its own workflow run, including
+when the shared checks fail. Its headline status summarizes the shared checks;
+the folded details show the individual coverage gates.
 
 To require passing checks before merging, configure a ruleset or branch
 protection rule in GitHub repository settings after the check names have
 appeared in a run. Adding this workflow alone does not make checks required.
+If a rule already requires the previous check names, update it to the new
+`Checks / …` names after the split workflow has run.
 
 Add new files named `test_*.py` under `tests/`; discovery includes them
 automatically. Tests run offline without Home Assistant credentials or devices.
@@ -101,12 +113,13 @@ individual files may retain uncovered, unreachable choice outcomes because
 tests do not bypass global conditions to inflate coverage.
 Use `--thresholds <file>` to select another configuration for local experiments.
 
-On pull requests, the diff gates apply to measured
+On pull requests and existing-branch pushes, the diff gates apply to measured
 opportunities in changed YAML blocks. A change inside
 a nested value/template counts as a change to the containing control-flow
 blocks. This conservative check can require coverage of existing surrounding
-branches. Deleted opportunities are not measurable after removal. Local runs
-without `--base` skip the diff gates but still enforce both overall gates.
+branches. Deleted opportunities are not measurable after removal. New-branch
+pushes without a baseline and local runs without `--base` skip the diff gates
+but still enforce both overall gates.
 An empty changed denominator is `N/A`, not 100%.
 The local `--base` comparison uses Git-tracked changes; add new files to Git
 before checking their changed-block coverage.
