@@ -17,6 +17,9 @@ python -m unittest discover -s tests -v
 git diff --check
 ```
 
+Workflow comment-script tests also use Node.js when available. GitHub-hosted
+CI runners provide Node; Python-only local environments skip those checks.
+
 ## GitHub Actions
 
 The `CI` workflow runs on pushes, pull requests, and manual dispatch. It shows
@@ -29,6 +32,15 @@ these checks in the pull request:
   test suite independently on each Python version.
 - `Simulated YAML coverage`: records executed action blocks and branch outcomes,
   publishes a job summary, and uploads the `blueprint-coverage` report artifact.
+- `PR coverage report`: creates or updates one bot comment with the coverage
+  summary, threshold results, tested commit, and full report download link.
+
+Automatic comments run for pull requests from branches in this repository,
+including when coverage gates fail. Fork pull requests retain the read-only
+test jobs, job summary, and report artifact; they skip automatic comments
+because their standard workflow token cannot write PR comments. No personal
+access token is required. Test jobs keep read-only permissions; a separate job
+publishes report data without checking out or executing the test code.
 
 To run manually after the workflow is pushed, open **Actions → CI → Run workflow**.
 To require passing checks before merging, configure a ruleset or branch
