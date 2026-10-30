@@ -1,39 +1,44 @@
-# Focused blueprint checks
+# Blueprint tests and CI
 
-Requires Python, PyYAML, and Jinja2. From the repository root:
+Requires Python 3.11 or newer. From the repository root:
 
 ```powershell
+python -m pip install -r tests/requirements.txt
 python -m unittest discover -s tests -v
 git diff --check
 ```
 
-The SNZB-02DR2 checks interpret the actual blueprint YAML with a small test
-runner. They inject source changes during service calls, supported HA errors,
-and queue overflow to verify independent validation, latest-value draining,
-slot-selection ordering, startup behavior, and temperature conversion. Separate
-tests verify that raw exceptions/timeouts propagate instead of claiming they
-are handled by `continue_on_error`.
+## GitHub Actions
 
-These are logic checks, not a Home Assistant integration test. Import into
-Home Assistant 2025.3 or newer and exercise both ZHA and Zigbee2MQTT before
-release. In particular, verify actual service timeout completion and logs.
+The `CI` workflow runs on pushes, pull requests, and manual dispatch. It shows
+these checks in the pull request:
 
-The blueprint has the following explicit limitations:
+- `Blueprint validation`: checks every blueprint's YAML, duplicate keys,
+  required structure, declared input references, Jinja syntax, and README
+  import/raw-download paths.
+- `Unit tests (Python 3.11)` through `Unit tests (Python 3.14)`: runs the whole
+  test suite independently on each Python version.
 
-- `continue_on_error` handles supported `HomeAssistantError` subclasses only.
-  The raw ZHA attribute service can propagate external ZHA exceptions and raw
-  timeouts; those still abort the active worker and can leave pending readings
-  unsent. A later fresh trigger can start a new run, but recovery without that
-  trigger is not guaranteed for these exceptions.
-- A YAML service action has no generic hard-deadline option. The blueprint
-  relies on integration/transport timeouts and cannot release an indefinitely
-  suspended service or impose a fixed whole-call deadline on coordinator backlogs.
-- If ZHA returns a negative ZCL status without raising, the service does not
-  expose that status to this blueprint. The blueprint cannot detect a failed
-  slot selection in that case. It skips the value write only when selection raises.
-- Serialization applies within one automation instance, not across separate
-  automations writing to the same device.
+To run manually after the workflow is pushed, open **Actions → CI → Run workflow**.
+To require passing checks before merging, configure a ruleset or branch
+protection rule in GitHub repository settings after the check names have
+appeared in a run. Adding this workflow alone does not make checks required.
 
-Consequently this change does not close every acceptance criterion of issue #8.
-Strict ZHA failure isolation and hard timeouts need integration-level support
-or an execution component beyond a standalone automation blueprint.
+Add new files named `test_*.py` under `tests/`; discovery includes them
+automatically. Tests run offline without Home Assistant credentials or devices.
+
+## Adding tests
+
+- Keep tests independent and runnable without network access or a live device.
+- Read the actual blueprint YAML when checking its behavior.
+- Cover relevant normal, invalid-input, and failure cases.
+- Keep device-specific scenarios and limitations with their corresponding tests.
+
+## Validation scope
+
+Structural checks cover all discovered blueprints. Behavior coverage depends
+on the available test cases; a passing CI run does not imply every blueprint
+behavior is tested. These checks do not validate the complete Home Assistant
+schema or replace integration and device testing. Before release, import the
+changed blueprint into its supported Home Assistant version and exercise each
+declared integration.

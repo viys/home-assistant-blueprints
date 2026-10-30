@@ -59,3 +59,10 @@ statuses that the ZHA service does not expose.
 
 - Importing a blueprint installs its definition. Create and configure an automation from the imported blueprint before it can run.
 - Requirements vary by blueprint. Read the input descriptions in Home Assistant before creating the automation.
+
+## Tests
+
+GitHub Actions validates all blueprint definitions and catalogue links, and
+runs the test suite on Python 3.11–3.14 for pushes and pull requests. See
+[test instructions and coverage scope](tests/README.md) for local commands,
+manual CI runs, and the distinction between offline checks and device testing.
