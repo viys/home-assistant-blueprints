@@ -1,0 +1,27 @@
+name: PR source policy
+
+on:
+  pull_request_target:
+    branches: [master]
+    types: [opened, synchronize, reopened, edited]
+
+permissions: {}
+
+jobs:
+  source:
+    name: Master PR source
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      # Evaluate trusted base-branch policy without checking out PR code.
+      - name: Require this repository's dev branch
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.repository }}
+        run: |
+          if [[ "$HEAD_REF" != "dev" || "$HEAD_REPO" != "$BASE_REPO" ]]; then
+            echo "::error::Pull requests to master must come from this repository's dev branch."
+            exit 1
+          fi
+          echo "Source policy passed: dev -> master"
