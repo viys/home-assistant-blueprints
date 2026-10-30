@@ -22,8 +22,9 @@ CI runners provide Node; Python-only local environments skip those checks.
 
 ## GitHub Actions
 
-The `CI` workflow runs on pushes, pull requests, and manual dispatch. It shows
-these checks in the pull request:
+The `CI` workflow runs only on pull requests, including new commits pushed to
+an open PR. Pushes without a PR do not start CI, and there is no manual-dispatch
+entry point. It shows these checks in the pull request:
 
 - `Blueprint validation`: checks every blueprint's YAML, duplicate keys,
   required structure, declared input references, Jinja syntax, and README
@@ -42,7 +43,6 @@ because their standard workflow token cannot write PR comments. No personal
 access token is required. Test jobs keep read-only permissions; a separate job
 publishes report data without checking out or executing the test code.
 
-To run manually after the workflow is pushed, open **Actions → CI → Run workflow**.
 To require passing checks before merging, configure a ruleset or branch
 protection rule in GitHub repository settings after the check names have
 appeared in a run. Adding this workflow alone does not make checks required.
@@ -101,13 +101,13 @@ individual files may retain uncovered, unreachable choice outcomes because
 tests do not bypass global conditions to inflate coverage.
 Use `--thresholds <file>` to select another configuration for local experiments.
 
-On pull requests and existing-branch pushes, the diff gates apply to measured
+On pull requests, the diff gates apply to measured
 opportunities in changed YAML blocks. A change inside
 a nested value/template counts as a change to the containing control-flow
 blocks. This conservative check can require coverage of existing surrounding
-branches. Deleted opportunities are not measurable after removal. Manual runs
-and new-branch pushes without a baseline skip the diff gates but still enforce
-both overall gates. An empty changed denominator is `N/A`, not 100%.
+branches. Deleted opportunities are not measurable after removal. Local runs
+without `--base` skip the diff gates but still enforce both overall gates.
+An empty changed denominator is `N/A`, not 100%.
 The local `--base` comparison uses Git-tracked changes; add new files to Git
 before checking their changed-block coverage.
 

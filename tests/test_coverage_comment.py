@@ -134,6 +134,12 @@ class CoverageCommentTests(unittest.TestCase):
         self.assertIn("head.repo.full_name == github.repository", job["if"])
         self.assertFalse(any("checkout@" in step.get("uses", "") for step in job["steps"]))
 
+    def test_workflow_runs_only_on_pull_requests(self):
+        """Prevent duplicate push runs and their skipped PR-comment jobs."""
+        # BaseLoader preserves the YAML key 'on' rather than coercing it to True.
+        workflow = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+        self.assertEqual(set(workflow["on"]), {"pull_request"})
+
 
 if __name__ == "__main__":
     unittest.main()

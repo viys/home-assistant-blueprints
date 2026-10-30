@@ -16,7 +16,7 @@ Get-Content automation/sonoff/<blueprint>.yaml
 ```
 
 GitHub Actions runs blueprint validation and the test suite on Python 3.11–3.14
-for pushes and pull requests. Add regression tests under `tests/test_*.py` when
+for pull requests. Add regression tests under `tests/test_*.py` when
 changing behavior. Structural and behavior checks cover every current blueprint.
 See `tests/README.md` for scope and runtime limitations.
 
