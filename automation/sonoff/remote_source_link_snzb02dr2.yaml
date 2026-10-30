@@ -136,6 +136,10 @@ actions:
           {{ value }}
         {% endif %}
 
+  - condition: template
+    value_template: >
+      {{ trigger.id in ['temperature_changed', 'humidity_changed']
+         or (trigger.id == 'ha_started' and target_integration | trim == 'mqtt') }}
   - sequence:
     - choose:
         - conditions:
