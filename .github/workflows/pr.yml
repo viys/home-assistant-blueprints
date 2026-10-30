@@ -1,0 +1,144 @@
+name: PR CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Checks
+    uses: ./.github/workflows/checks.yml
+    with:
+      base-sha: ${{ github.event.pull_request.base.sha }}
+
+  coverage-comment:
+    name: PR coverage report
+    needs: checks
+    if: >-
+      ${{ always() && !cancelled() && github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      # Consume report data only; do not check out or run test code with a write token.
+      - name: Find coverage report
+        id: report-metadata
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
+              ...context.repo, run_id: context.runId, per_page: 100,
+            });
+            // Look up data in this run even when the reusable checks workflow failed.
+            const report = artifacts.filter(item => item.name === 'blueprint-coverage' && !item.expired)
+              .sort((first, second) => second.id - first.id)[0];
+            core.setOutput('artifact-id', report ? String(report.id) : '');
+      - name: Download coverage report
+        if: steps.report-metadata.outputs.artifact-id != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ steps.report-metadata.outputs.artifact-id }}
+          path: coverage-report
+          merge-multiple: true
+      - name: Create or update coverage comment
+        if: always() && !cancelled()
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          COVERAGE_RESULT: ${{ needs.checks.result }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const marker = '<!-- blueprint-simulated-coverage -->';
+            const { owner, repo } = context.repo;
+            const pull = context.payload.pull_request;
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const reportFile = 'coverage-report/coverage.json';
+            let report = null;
+            try {
+              if (fs.existsSync(reportFile)) {
+                report = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
+                if (!Array.isArray(report.gates) || !Array.isArray(report.opportunities)) report = null;
+              }
+            } catch (error) {
+              core.warning(`Cannot read coverage data: ${error.message}`);
+            }
+            const status = process.env.COVERAGE_RESULT === 'success' ? 'PASS' : 'FAIL';
+            const commitUrl = `${process.env.GITHUB_SERVER_URL}/${owner}/${repo}/commit/${pull.head.sha}`;
+            let content = '⚠️ Coverage report unavailable. Check the workflow logs for details.';
+            if (report) {
+              const gates = new Map(report.gates.map(gate => [gate.name, gate]));
+              // Keep absent baselines visible as N/A, never as perfect coverage.
+              const rate = name => {
+                const gate = gates.get(name);
+                return gate?.total ? `${gate.percentage.toFixed(1)}%` : 'N/A';
+              };
+              // Use measured gate outcomes, not rounded displayed percentages.
+              const icon = names => {
+                const measured = names.map(name => gates.get(name)).filter(gate => gate?.total);
+                return measured.length === 0 ? '➖' : measured.every(gate => gate.passed) ? '✅' : '❌';
+              };
+              const changed = ['changed_actions', 'changed_branches'];
+              const overall = ['overall_actions', 'overall_branches'];
+              const lines = [
+                `${icon(changed)} Changed coverage: actions **${rate(changed[0])}**, branches **${rate(changed[1])}**.`,
+                `${icon(overall)} Project coverage: actions **${rate(overall[0])}**, branches **${rate(overall[1])}**.`,
+                `${report.tests_passed ? '✅' : '❌'} Tests: **${report.tests_passed ? 'PASS' : 'FAIL'}** (${report.tests_run} run). Commit [\`${pull.head.sha.slice(0, 7)}\`](${commitUrl}).`,
+              ];
+              const diff = ['@@ Simulated YAML coverage @@',
+                '                         Covered   Total  Coverage  Minimum'];
+              for (const [name, label] of [
+                ['overall_actions', 'Project actions'], ['overall_branches', 'Project branches'],
+                ['changed_actions', 'Changed actions'], ['changed_branches', 'Changed branches'],
+              ]) {
+                const gate = gates.get(name);
+                const prefix = gate?.total ? (gate.passed ? '+' : '-') : ' ';
+                diff.push(`${prefix} ${label.padEnd(23)}${String(gate?.covered ?? '-').padStart(6)} ${String(gate?.total ?? '-').padStart(7)} ${rate(name).padStart(9)} ${gate ? `${gate.minimum}%` : 'N/A'}`);
+              }
+              // Include only PR-modified blueprints, even for metadata-only changes.
+              const changedFiles = new Set(report.changed_files ?? report.opportunities
+                .filter(point => point.changed).map(point => point.file));
+              const files = new Map();
+              for (const point of report.opportunities) {
+                if (!changedFiles.has(point.file)) continue;
+                const counts = files.get(point.file) || [0, 0, 0, 0];
+                const offset = point.kind === 'action' ? 0 : 2;
+                counts[offset] += Number(point.hits > 0);
+                counts[offset + 1] += 1;
+                files.set(point.file, counts);
+              }
+              const details = files.size ? ['**Changed blueprints**', ''] : [];
+              for (const [file, counts] of [...files].sort().slice(0, 50)) {
+                const label = file.split('/').pop().replace(/[|`<>]/g, '').slice(0, 120);
+                details.push(`- \`${label}\` — actions **${counts[0]}/${counts[1]}**, branches **${counts[2]}/${counts[3]}**`);
+              }
+              if (files.size > 50) details.push(`- … ${files.size - 50} more changed blueprints.`);
+              content = `${lines.join('  \n')}\n\n<details>\n<summary>Coverage details</summary>\n\n\`\`\`diff\n${diff.join('\n')}\n\`\`\`\n\n${details.join('\n')}\n\n</details>`;
+            }
+            const body = `${marker}\n## [Blueprint Coverage Report](${runUrl}) · **${status}**\n\n${content}\n\n<sub>Simulated YAML execution only; not real Home Assistant or device coverage.</sub>`;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number: pull.number, per_page: 100,
+            });
+            const previous = comments.find(comment =>
+              comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker));
+            const { data: current } = await github.rest.pulls.get({
+              owner, repo, pull_number: pull.number,
+            });
+            // An older run must not replace the report for a newer PR head.
+            if (current.state !== 'open' || current.head.sha !== pull.head.sha) {
+              core.info('Skipping report for a closed PR or an outdated commit.');
+              return;
+            }
+            if (previous) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: previous.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: pull.number, body });
+            }

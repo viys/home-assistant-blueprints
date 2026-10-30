@@ -102,6 +102,7 @@ class CoverageTests(unittest.TestCase):
         self.assertTrue(any(row["path"].endswith("sequence/0") for row in missing))
         payload = json.loads((output / "coverage.json").read_text(encoding="utf-8"))
         self.assertTrue(payload["tests_passed"])
+        self.assertEqual(payload["changed_files"], ["automation/example.yaml"])
         self.assertIn("Simulated", (output / "summary.md").read_text(encoding="utf-8"))
         self.assertTrue((output / "index.html").is_file())
 

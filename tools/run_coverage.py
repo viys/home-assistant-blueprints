@@ -90,7 +90,7 @@ def write_reports(rows, output, changed, result, base, thresholds=None):
     payload = dict(measurement="simulated-yaml-control-flow", notice=NOTICE,
                    tests_passed=result.wasSuccessful(), tests_run=result.testsRun,
                    coverage_passed=all(gate["passed"] for gate in gates), gates=gates,
-                   base=base, opportunities=rows)
+                   base=base, changed_files=sorted(changed), opportunities=rows)
     (output / "coverage.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
     summary = ["# Simulated blueprint coverage", "", NOTICE, "",
                f"Tests: **{'PASS' if result.wasSuccessful() else 'FAIL'}** ({result.testsRun} tests)", "",
