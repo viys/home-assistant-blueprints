@@ -94,17 +94,20 @@ variables:
 
 triggers:
   - trigger: event
-    id: source_changed
     event_type: state_changed
+    event_data:
+      entity_id: !input source_temperature
+    id: temperature_changed
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: !input source_humidity
+    id: humidity_changed
   - trigger: homeassistant
     id: ha_started
     event: start
 
 conditions:
-  - condition: template
-    value_template: >
-      {{ trigger.id == 'ha_started'
-         or trigger.event.data.entity_id in [temperature_entity, humidity_entity] }}
   - condition: template
     value_template: >
       {{ is_number(states(temperature_entity))
@@ -132,53 +135,49 @@ actions:
           {{ value }}
         {% endif %}
 
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {{ trigger.id == 'source_changed'
-                 or (trigger.id == 'ha_started' and target_integration | trim == 'mqtt') }}
-        sequence:
-          - choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ target_integration | trim == 'zha' }}"
-                sequence:
-                  - action: zha.set_zigbee_cluster_attribute
-                    data:
-                      ieee: "{{ target_ieee | trim }}"
-                      endpoint_id: 1
-                      cluster_id: 0xFC11
-                      cluster_type: in
-                      attribute: 0xFFF1
-                      value: "{{ slot | int - 1 }}"
-                  - action: zha.set_zigbee_cluster_attribute
-                    data:
-                      ieee: "{{ target_ieee | trim }}"
-                      endpoint_id: 1
-                      cluster_id: 0xFC11
-                      cluster_type: in
-                      attribute: 0xFFF3
-                      value: "{{ (temperature_c | float * 100) | round(0) | int }}"
-              - conditions:
-                  - condition: template
-                    value_template: >
-                      {{ target_integration | trim == 'mqtt'
-                         and target_temperature_entity | trim != '' }}
-                sequence:
-                  - action: number.set_value
-                    target:
-                      entity_id: "{{ target_temperature_entity | trim }}"
-                    data:
-                      value: "{{ temperature_c | float | round(1) }}"
+  - condition: template
+    value_template: >
+      {{ trigger.id in ['temperature_changed', 'humidity_changed']
+         or (trigger.id == 'ha_started' and target_integration | trim == 'mqtt') }}
+  - sequence:
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ target_integration | trim == 'zha' }}"
+          sequence:
+            - action: zha.set_zigbee_cluster_attribute
+              data:
+                ieee: "{{ target_ieee | trim }}"
+                endpoint_id: 1
+                cluster_id: 0xFC11
+                cluster_type: in
+                attribute: 0xFFF1
+                value: "{{ slot | int - 1 }}"
+            - action: zha.set_zigbee_cluster_attribute
+              data:
+                ieee: "{{ target_ieee | trim }}"
+                endpoint_id: 1
+                cluster_id: 0xFC11
+                cluster_type: in
+                attribute: 0xFFF3
+                value: "{{ (temperature_c | float * 100) | round(0) | int }}"
+        - conditions:
+            - condition: template
+              value_template: >
+                {{ target_integration | trim == 'mqtt'
+                   and target_temperature_entity | trim != '' }}
+          sequence:
+            - action: number.set_value
+              target:
+                entity_id: "{{ target_temperature_entity | trim }}"
+              data:
+                value: "{{ temperature_c | float | round(1) }}"
 
   - choose:
       - conditions:
           - condition: template
             value_template: >
-              {{ (trigger.id == 'source_changed'
-                  or (trigger.id == 'ha_started' and target_integration | trim == 'mqtt'))
-                 and humidity_entity | trim != ''
+              {{ humidity_entity | trim != ''
                  and is_number(states(humidity_entity))
                  and 0 <= states(humidity_entity) | float <= 99.9 }}
         sequence:
