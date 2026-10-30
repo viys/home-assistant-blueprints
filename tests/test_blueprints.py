@@ -119,27 +119,37 @@ class BlueprintTests(unittest.TestCase):
                         environment.parse(value)
 
     def test_readme_catalogue_matches_files(self):
-        """Verify import badges and raw links point to each actual blueprint path."""
+        """Verify master import badges and both branches' raw links."""
         # Compare decoded paths, including each URL-encoded blueprint_url parameter.
         text = (ROOT / "README.md").read_text(encoding="utf-8")
         expected = {path.relative_to(ROOT).as_posix() for path in self.documents}
-        imports = set()
-        raw_links = set()
+        imports = {branch: set() for branch in ("master", "dev")}
+        raw_links = {branch: set() for branch in ("master", "dev")}
         for url in re.findall(r'https://[^\s"<>\)]+', text):
             parsed = urlparse(url)
             if parsed.netloc == "my.home-assistant.io":
                 for source in parse_qs(parsed.query).get("blueprint_url", []):
                     source_url = urlparse(source)
                     self.assertEqual(source_url.netloc, "github.com")
-                    prefix = "/viys/home-assistant-blueprints/blob/master/"
-                    self.assertTrue(source_url.path.startswith(prefix), source)
-                    imports.add(unquote(source_url.path[len(prefix):]))
+                    for branch in imports:
+                        prefix = f"/viys/home-assistant-blueprints/blob/{branch}/"
+                        if source_url.path.startswith(prefix):
+                            imports[branch].add(unquote(source_url.path[len(prefix):]))
+                            break
+                    else:
+                        self.fail(f"Unexpected blueprint import URL: {source}")
             elif parsed.netloc == "raw.githubusercontent.com":
-                prefix = "/viys/home-assistant-blueprints/master/"
-                self.assertTrue(parsed.path.startswith(prefix), url)
-                raw_links.add(unquote(parsed.path[len(prefix):]))
-        self.assertEqual(imports, expected)
-        self.assertEqual(raw_links, expected)
+                for branch in raw_links:
+                    prefix = f"/viys/home-assistant-blueprints/{branch}/"
+                    if parsed.path.startswith(prefix):
+                        raw_links[branch].add(unquote(parsed.path[len(prefix):]))
+                        break
+                else:
+                    self.fail(f"Unexpected raw YAML URL: {url}")
+        for branch in imports:
+            with self.subTest(branch=branch):
+                self.assertEqual(imports[branch], expected if branch == "master" else set())
+                self.assertEqual(raw_links[branch], expected)
 
     def test_duplicate_yaml_keys_are_rejected(self):
         """Ensure malformed mappings cannot produce a misleading passing check."""
