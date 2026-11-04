@@ -60,8 +60,12 @@ appeared in a run. Adding this workflow alone does not make checks required.
 If a rule already requires the previous check names, update it to the new
 `Checks / …` names after the split workflow has run.
 
-Add new files named `test_*.py` under `tests/`; discovery includes them
-automatically. Tests run offline without Home Assistant credentials or devices.
+Place each blueprint's dedicated tests directly under `tests/` as
+`test_<blueprint>.py`, matching the YAML filename stem. Put repository-wide
+checks and shared test utilities in `tests/common/`. Give utilities names
+without the `test_` prefix. The structural suite checks for missing or extra
+blueprint test files.
+Tests run offline without Home Assistant credentials or devices.
 
 ## Adding tests
 
@@ -135,6 +139,44 @@ Do not infer feature safety from the percentage alone: keep assertions about
 values, command ordering, error behavior, and skipped writes.
 
 ## Validation scope
+
+TRV-ZBL multi-source tests cover five independent ZHA slots, unit conversion,
+the firmware's -30 to 100 °C range, startup/reload/enable synchronization,
+empty/invalid/duplicate/self-source removal, recovery, service-error isolation,
+and Zigbee2MQTT's source-1-only fallback. The blueprint targets Home Assistant
+2025.10 or newer and requires a ZHA handler mapping `0xFF11`–`0xFF15` to
+`0x601E:T=0x03` sensor IDs 1–5, with `-32768` unbinding a slot. The local
+`config/zha_quirks/trv_zbl.py` implementation supplies this contract; a legacy
+single-source handler does not. Firmware performs the average, not the blueprint.
+
+The unified ZBL temperature blueprint discovers ZHA mode automatically from a read-only
+`enum` sensor on the selected device. The handler exposes the existing `0xFF03`
+attribute with raw states `internal_sensor` and `external_sensor`. HA does not
+publish enum options as state attributes; discovery uses the raw state and
+`device_class: enum`, not names or display translations. Exactly one
+matching sensor must exist; missing, ambiguous or unavailable status blocks
+writes. The original switch still controls the mode. Update the device handler
+and restart Home Assistant before using this blueprint. Keep this diagnostic
+sensor enabled. Existing ZHA control selections are ignored; no reselection is
+needed. The blueprint has no control selector. Zigbee2MQTT discovers exactly
+one number on the selected device with unit `°C`, min `0`, max `99.9`, and step
+`0.1`, matching the device converter's `external_temperature_input` expose.
+Missing or ambiguous matches block writes; old manual selections are ignored.
+Keep the converter's unit/range/step contract intact when changing that expose.
+Tests cover translated/renamed status entities, mode enable/disable, discovery
+failures, startup/reload, and MQTT input validation. Entity-name suffixes are not
+used for discovery. Offline tests simulate the handler's published state; validate
+the quirk enum mapping and entity creation in the installed ZHA runtime as well.
+
+Before release, import the multi-source blueprint into a test instance with
+that handler and five-source firmware. Disable the old temperature automation,
+enable external temperature mode, then verify 20 °C and 24 °C produce 22 °C;
+add all five sources and change each independently. Check unavailable/recovered
+sources, empty slots after reload, restart, mode enable, and MQTT source 1.
+Offline tests do not validate device averaging, Zigbee delivery, the two-hour
+per-source timeout, or Home Assistant queue behavior. No periodic refresh is
+sent: unchanged sources expire according to the firmware unless HA receives
+another state-change event for that source.
 
 Structural checks cover all discovered blueprints. Behavior coverage depends
 on the available test cases; a passing CI run does not imply every blueprint

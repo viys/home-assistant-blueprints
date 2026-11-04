@@ -16,9 +16,19 @@ Get-Content automation/sonoff/<blueprint>.yaml
 ```
 
 GitHub Actions runs blueprint validation and the test suite on Python 3.11–3.14
-for pushes and pull requests. Add regression tests under `tests/test_*.py` when
-changing behavior. Structural and behavior checks cover every current blueprint.
-See `tests/README.md` for scope and runtime limitations.
+for pushes and pull requests. Structural and behavior checks cover every current
+blueprint. See `tests/README.md` for scope and runtime limitations.
+
+Each blueprint must have exactly one dedicated test file. For
+`automation/sonoff/<blueprint>.yaml`, use `tests/test_<blueprint>.py` with the
+same filename stem. Put all blueprint-specific tests, including regressions,
+in that file. Use separate test classes within it to group scenarios by behavior
+or integration. Put repository-wide test cases and shared test utilities in
+`tests/common/`. Give utility modules names without the `test_` prefix.
+
+Rename, consolidate, or remove the corresponding dedicated tests in the same
+change that renames, merges, or removes a blueprint. When merging blueprints,
+move all still-applicable cases into the surviving blueprint's test file.
 
 Import the changed blueprint into a Home Assistant test instance, create an automation from it, and exercise its triggers and service calls for each declared integration (for example, ZHA and Zigbee2MQTT). Check the minimum Home Assistant version and selectors against the intended target version.
 
@@ -35,6 +45,11 @@ Describe only what the blueprint supports and does for the user. Do not leak imp
 ## Documentation and Link Integrity
 
 Keep `README.md` focused on the repository overview, common import/re-import instructions, and the blueprint catalogue. Put blueprint-specific requirements and supported behavior in that blueprint's metadata and input descriptions; track unresolved defects and implementation limitations in GitHub Issues. Keep test procedures and coverage details in `tests/README.md`. Do not add per-blueprint troubleshooting, pending-work lists, or issue status paragraphs to the root README.
+
+Use the same short, action-oriented name in the README catalogue and in
+`blueprint.name`. Follow the existing action-and-device naming pattern. Do not
+use parentheses or append explanations to blueprint names. Put source limits,
+integration details, and behavior in the blueprint description.
 
 Every new blueprint needs a matching entry in `README.md` with its summary, stable `master` import badge and raw-download link, plus a `dev` raw-download link. Do not add a `dev` import badge. When adding, moving, renaming, or deleting a file, update every affected relative and GitHub URL in the README in the same change. Verify each path segment, branch, and URL-encoded `blueprint_url` points to the final filename; do not leave stale links behind.
 
