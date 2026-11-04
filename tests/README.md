@@ -145,16 +145,16 @@ and Zigbee2MQTT's source-1-only fallback. The blueprint targets Home Assistant
 `config/zha_quirks/trv_zbl.py` implementation supplies this contract; a legacy
 single-source handler does not. Firmware performs the average, not the blueprint.
 
-Both ZBL temperature blueprints discover ZHA mode automatically from a read-only
+The unified ZBL temperature blueprint discovers ZHA mode automatically from a read-only
 `enum` sensor on the selected device. The handler exposes the existing `0xFF03`
 attribute with raw states `internal_sensor` and `external_sensor`. HA does not
 publish enum options as state attributes; discovery uses the raw state and
 `device_class: enum`, not names or display translations. Exactly one
 matching sensor must exist; missing, ambiguous or unavailable status blocks
 writes. The original switch still controls the mode. Update the device handler
-and restart Home Assistant before using these blueprints. Keep this diagnostic
+and restart Home Assistant before using this blueprint. Keep this diagnostic
 sensor enabled. Existing ZHA control selections are ignored; no reselection is
-needed. Neither blueprint has a control selector. Zigbee2MQTT discovers exactly
+needed. The blueprint has no control selector. Zigbee2MQTT discovers exactly
 one number on the selected device with unit `°C`, min `0`, max `99.9`, and step
 `0.1`, matching the device converter's `external_temperature_input` expose.
 Missing or ambiguous matches block writes; old manual selections are ignored.

@@ -1,4 +1,4 @@
-"""Behavior checks for the four single-source thermostat/TRV blueprints."""
+"""Behavior checks for the three single-source thermostat/TRV blueprints."""
 
 import unittest
 
@@ -8,7 +8,6 @@ from tools.blueprint_runner import BlueprintRunner, HandledServiceError
 
 CASES = (
     ("remote_temperature_link_tp_wgzba.yaml", "TP-WGZBA", "Zigbee thermostat panel", 0x7009),
-    ("remote_temperature_link_trv_zbl.yaml", "TRV-ZBL", "Zigbee thermostatic radiator valve", 0xFF02),
     ("remote_temperature_link_trvzb.yaml", "TRVZB", "Zigbee thermostatic radiator valve", None),
     ("remote_temperature_link_trvzbt.yaml", "TRV-ZBT", "Zigbee thermostatic radiator valve", None),
 )
@@ -16,7 +15,7 @@ CASES = (
 
 def single_source(case, integration="zha"):
     """Configure a real blueprint with explicit target entities and source state."""
-    # Shared fixture setup avoids four separate copies of the same execution model.
+    # Shared fixture setup avoids three separate copies of the same execution model.
     file, model, mqtt_model, _ = case
     inputs = dict(target_device="target", source_entity="sensor.source")
     run = BlueprintRunner(ROOT / "automation/sonoff" / file, inputs)
@@ -29,10 +28,6 @@ def single_source(case, integration="zha"):
     run.set_state("sensor.source", "20", "°C")
     run.set_state("switch.target_external_temperature_sensor", "on")
     run.set_state("select.target_temperature_sensor_select", "external")
-    if model == "TRV-ZBL":
-        run.entity_map["target"].append("sensor.target_temperature_source_mode")
-        run.set_state("sensor.target_temperature_source_mode", "external_sensor",
-                      device_class="enum")
     run.set_state("number.target_external_temperature_input", "20", "°C",
                   min=0, max=99.9, step=0.1)
     return run
@@ -84,10 +79,6 @@ class SingleSourceTests(unittest.TestCase):
             run = single_source(case)
             switch = "switch.target_external_temperature_sensor"
             off_value, on_value, attrs = "off", "on", {}
-            if case[1] == "TRV-ZBL":
-                switch = "sensor.target_temperature_source_mode"
-                off_value, on_value = "internal_sensor", "external_sensor"
-                attrs = dict(device_class="enum")
             old = run.set_state(switch, off_value, **attrs)
             run.fire("source_temperature")
             self.assertEqual(run.calls, [])
@@ -149,7 +140,7 @@ class SingleSourceTests(unittest.TestCase):
     def test_trvzbt_accepts_alternative_zha_switch_name(self):
         """Support both selector-switch entity suffixes declared in the ZBT YAML."""
         # The fixture must not hard-code only the older switch naming pattern.
-        run = single_source(CASES[3])
+        run = single_source(CASES[2])
         run.entity_map["target"][0] = "switch.target_temperature_sensor_select"
         run.set_state("switch.target_temperature_sensor_select", "on")
         run.fire("source_temperature")

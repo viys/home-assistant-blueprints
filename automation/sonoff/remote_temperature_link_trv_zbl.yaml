@@ -1,18 +1,26 @@
 blueprint:
-  name: "Sync Remote Temperature to TRV-ZBL"
+  name: Sync Remote Temperature Sources to TRV-ZBL
   author: Sonoff
   description: >
-    Synchronizes an external temperature reading with a SONOFF TRV-ZBL
-    thermostatic radiator valve connected through ZHA or Zigbee2MQTT. The
-    reading is applied whenever the valve's external temperature mode is
-    enabled, immediately and on each source update. Temperature values in
+    Synchronizes external temperature readings with a SONOFF TRV-ZBL
+    thermostatic radiator valve through ZHA or Zigbee2MQTT. ZHA supports up
+    to five sources, averaged by the valve; Zigbee2MQTT uses source 1.
+    ZHA synchronization runs while the external temperature sensor is enabled
+    and resumes when it is turned on, Home Assistant starts, or automations
+    reload. Invalid sources are removed from the average until they recover.
+    Zigbee2MQTT synchronizes on source 1 updates. Temperature values in
     Celsius, Fahrenheit, or Kelvin are automatically converted to Celsius.
   domain: automation
-
+  homeassistant:
+    min_version: 2025.10.0
   input:
     target_device:
       name: TRV-ZBL device
-      description: Select the ZHA or Zigbee2MQTT radiator valve that should receive the temperature.
+      description: >
+        Select the TRV-ZBL radiator valve. ZHA requires firmware and a device
+        handler supporting five remote temperature sources. Use only one
+        temperature synchronization automation per valve. For one source,
+        leave sources 2 through 5 empty. Zigbee2MQTT supports source 1 only.
       selector:
         device:
           filter:
@@ -23,18 +31,63 @@ blueprint:
               manufacturer: SONOFF
               model: Zigbee thermostatic radiator valve
               model_id: TRV-ZBL
-    source_entity:
-      name: External temperature sensor
-      description: Select a temperature sensor from another device. The target TRV-ZBL's own temperature is not a valid source.
+    source_entity_1:
+      name: Remote temperature source 1
+      description: >
+        Required. Select a temperature sensor from another device, between
+        -30 and 100 °C after conversion. Use a different sensor for each source.
       selector:
         entity:
           filter:
-            domain: sensor
-            device_class: temperature
+            - domain: sensor
+              device_class: temperature
+    source_entity_2:
+      name: Remote temperature source 2 (optional)
+      description: ZHA only. Leave empty when a second remote source is not used.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: temperature
+    source_entity_3:
+      name: Remote temperature source 3 (optional)
+      description: ZHA only. Leave empty when a third remote source is not used.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: temperature
+    source_entity_4:
+      name: Remote temperature source 4 (optional)
+      description: ZHA only. Leave empty when a fourth remote source is not used.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: temperature
+    source_entity_5:
+      name: Remote temperature source 5 (optional)
+      description: ZHA only. Leave empty when a fifth remote source is not used.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: temperature
 
 variables:
   target_device: !input target_device
-  source_entity: !input source_entity
+  source_entity_1: !input source_entity_1
+  source_entity_2: !input source_entity_2
+  source_entity_3: !input source_entity_3
+  source_entity_4: !input source_entity_4
+  source_entity_5: !input source_entity_5
+  source_entities: >
+    {{ [source_entity_1, source_entity_2, source_entity_3, source_entity_4, source_entity_5]
+       | map('trim') | list }}
   target_integration: >
     {% set ns = namespace(value='') %}
     {% for identifier in (device_attr(target_device, 'identifiers') or []) %}
@@ -77,73 +130,100 @@ variables:
         {{ identifier[1] }}
       {%- endif -%}
     {%- endfor %}
+  full_sync: >
+    {{ trigger.id in ['ha_started', 'automation_reloaded']
+       or (trigger.id == 'source_changed'
+           and trigger.event.data.entity_id == zha_temperature_source_status
+           and trigger.event.data.new_state is not none
+           and trigger.event.data.new_state.state == 'external_sensor') }}
 
 triggers:
-  - trigger: state
-    entity_id: !input source_entity
-    id: source_temperature
-    not_to:
-      - "unknown"
-      - "unavailable"
   - trigger: event
+    id: source_changed
     event_type: state_changed
-    id: external_temperature_sensor_enabled
+  - trigger: homeassistant
+    id: ha_started
+    event: start
+  - trigger: event
+    id: automation_reloaded
+    event_type: automation_reloaded
 
 conditions:
   - condition: template
     value_template: >
-      {{ is_number(states(source_entity))
-         and state_attr(source_entity, 'unit_of_measurement') in ['°C', '°F', 'K']
-         and source_entity not in (device_entities(target_device) or [])
-         and device_attr(target_device, 'manufacturer') == 'SONOFF'
+      {{ full_sync | bool
+         or (trigger.id == 'source_changed'
+             and trigger.event.data.entity_id in source_entities) }}
+  - condition: template
+    value_template: >
+      {{ device_attr(target_device, 'manufacturer') == 'SONOFF'
          and ((target_integration | trim == 'zha'
                and device_attr(target_device, 'model') == 'TRV-ZBL'
                and target_ieee | trim != ''
                and zha_temperature_source_status.startswith('sensor.')
                and zha_temperature_source_status in (device_entities(target_device) or [])
-               and is_state(zha_temperature_source_status, 'external_sensor')
-               and (trigger.id == 'source_temperature'
-                    or (trigger.event.data.entity_id == zha_temperature_source_status
-                        and trigger.event.data.new_state is not none
-                        and trigger.event.data.new_state.state == 'external_sensor')))
+               and is_state(zha_temperature_source_status, 'external_sensor'))
               or (target_integration | trim == 'mqtt'
                   and device_attr(target_device, 'model') == 'Zigbee thermostatic radiator valve'
                   and mqtt_external_temperature_input.startswith('number.')
-                  and mqtt_external_temperature_input in (device_entities(target_device) or [])
-                  and trigger.id == 'source_temperature')) }}
+                  and mqtt_external_temperature_input in (device_entities(target_device) or []))) }}
 
 actions:
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ target_integration | trim == 'zha' }}"
-        sequence:
-          - action: zha.set_zigbee_cluster_attribute
-            data:
-              ieee: "{{ target_ieee | trim }}"
-              endpoint_id: 1
-              cluster_id: 0xFC11
-              cluster_type: in
-              # 0xFF02 is the quirk's int16 entry point for 0x601E:T=0x01.
-              # The quirk owns the uint8-array encoding required by TRV-ZBL firmware.
-              attribute: 0xFF02
-              value: >
-                {% set temperature = states(source_entity) | float %}
-                {% set unit = state_attr(source_entity, 'unit_of_measurement') %}
-                {{ (((temperature - 32) * 5 / 9 if unit == '°F'
-                     else temperature - 273.15 if unit == 'K'
-                     else temperature) * 100) | round(0) | int }}
-    # The global conditions admit only enabled ZHA or validated MQTT updates.
-    default:
-      - action: number.set_value
-        target:
-          entity_id: "{{ mqtt_external_temperature_input | trim }}"
-        data:
-          value: >
-            {% set temperature = states(source_entity) | float %}
-            {% set unit = state_attr(source_entity, 'unit_of_measurement') %}
-            {{ (temperature - 32) * 5 / 9 if unit == '°F'
-               else temperature - 273.15 if unit == 'K'
-               else temperature }}
+  - repeat:
+      for_each: "{{ source_entities }}"
+      sequence:
+        - condition: template
+          value_template: >
+            {{ (target_integration | trim == 'zha'
+                and (full_sync | bool or trigger.event.data.entity_id == repeat.item))
+               or (target_integration | trim == 'mqtt'
+                   and repeat.index == 1
+                   and trigger.id == 'source_changed'
+                   and trigger.event.data.entity_id == repeat.item) }}
+        - variables:
+            source_valid: >
+              {{ repeat.item != ''
+                 and repeat.item not in source_entities[:repeat.index - 1]
+                 and repeat.item not in (device_entities(target_device) or [])
+                 and is_number(states(repeat.item))
+                 and state_attr(repeat.item, 'unit_of_measurement') in ['°C', '°F', 'K'] }}
+            temperature_c: >
+              {% if source_valid | bool %}
+                {% set value = states(repeat.item) | float %}
+                {% set unit = state_attr(repeat.item, 'unit_of_measurement') %}
+                {{ (value - 32) * 5 / 9 if unit == '°F'
+                   else value - 273.15 if unit == 'K'
+                   else value }}
+              {% else %}
+                {{ none }}
+              {% endif %}
+        - choose:
+            - conditions:
+                - condition: template
+                  value_template: "{{ target_integration | trim == 'zha' }}"
+              sequence:
+                # The handler maps FF11-FF15 to T03 IDs 1-5; -32768 unbinds.
+                # Remove invalid slots so stale values cannot affect the mean.
+                - action: zha.set_zigbee_cluster_attribute
+                  continue_on_error: true
+                  data:
+                    ieee: "{{ target_ieee | trim }}"
+                    endpoint_id: 1
+                    cluster_id: 0xFC11
+                    cluster_type: in
+                    attribute: "{{ 65296 + repeat.index }}"
+                    value: >
+                      {{ (temperature_c * 100) | round(0) | int
+                         if source_valid | bool and -30 <= temperature_c <= 100
+                         else -32768 }}
+            - conditions:
+                - condition: template
+                  value_template: "{{ source_valid | bool and -30 <= temperature_c <= 100 }}"
+              sequence:
+                - action: number.set_value
+                  target:
+                    entity_id: "{{ mqtt_external_temperature_input | trim }}"
+                  data:
+                    value: "{{ temperature_c }}"
 
-mode: restart
+mode: queued

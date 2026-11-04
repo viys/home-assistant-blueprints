@@ -10,7 +10,7 @@ def sources(integration="zha", count=5):
     """Configure five independently addressable temperature sources."""
     inputs = {f"source_entity_{i}": f"sensor.source{i}" if i <= count else ""
               for i in range(1, 6)}
-    run = BlueprintRunner(ROOT / "automation/sonoff/remote_temperature_sources_link_trv_zbl.yaml",
+    run = BlueprintRunner(ROOT / "automation/sonoff/remote_temperature_link_trv_zbl.yaml",
                           dict(target_device="target",
                                **inputs))
     run.devices["target"] = dict(manufacturer="SONOFF", identifiers=[(integration, "00:11")],

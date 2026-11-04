@@ -2,13 +2,11 @@
 
 import unittest
 
-from test_remote_temperature_links import CASES, single_source
 from test_remote_temperature_sources_link_trv_zbl import sources
 
 
 class ZblEntitySelectionTests(unittest.TestCase):
     def instances(self, integration="zha"):
-        yield single_source(CASES[1], integration), "source_temperature", "sensor.source"
         yield sources(integration), "source_changed", "sensor.source1"
 
     def status(self, run, entity, value="external_sensor", **attrs):
@@ -36,7 +34,7 @@ class ZblEntitySelectionTests(unittest.TestCase):
                     run.fire(trigger, entity=source)
                     self.assertEqual(run.calls, [])
                     run.dispatch_state(entity, old, self.status(run, entity))
-                    self.assertEqual(len(run.calls), 5 if "sources" in run.file.name else 1)
+                    self.assertEqual(len(run.calls), 5)
 
     def test_missing_foreign_ambiguous_unavailable_status_skips(self):
         for problem in ("missing", "foreign", "duplicate", "unavailable", "unknown", "wrong_state"):
