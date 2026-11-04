@@ -141,7 +141,11 @@ class BlueprintRunner:
         """Resolve inputs and templates recursively, preserving native values."""
         # HA renders action data only when that action executes.
         if isinstance(value, tuple) and value[0] == "input":
-            return self.inputs[value[1]]
+            name = value[1]
+            # Home Assistant uses the declared default only for omitted inputs.
+            if name in self.inputs:
+                return self.inputs[name]
+            return self.doc['blueprint']['input'][name]['default']
         if isinstance(value, str) and ("{{" in value or "{%" in value):
             rendered = self.env.from_string(value).render(**scope)
             if isinstance(rendered, str):
