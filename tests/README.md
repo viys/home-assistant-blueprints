@@ -147,7 +147,9 @@ single-source handler does not. Firmware performs the average, not the blueprint
 
 Both ZBL temperature blueprints discover ZHA mode automatically from a read-only
 `enum` sensor on the selected device. The handler exposes the existing `0xFF03`
-attribute with options `internal_sensor` and `external_sensor`. Exactly one
+attribute with raw states `internal_sensor` and `external_sensor`. HA does not
+publish enum options as state attributes; discovery uses the raw state and
+`device_class: enum`, not names or display translations. Exactly one
 matching sensor must exist; missing, ambiguous or unavailable status blocks
 writes. The original switch still controls the mode. Update the device handler
 and restart Home Assistant before using these blueprints. Keep this diagnostic

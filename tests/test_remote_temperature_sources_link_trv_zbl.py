@@ -18,7 +18,7 @@ def sources(integration="zha", count=5):
     run.entity_map["target"] = ["sensor.target_temperature_source_mode",
                                 "select.target_temperature_sensor_select",
                                 "number.target_external_temperature_input"]
-    run.set_state("sensor.target_temperature_source_mode", "external_sensor", device_class="enum", options=["internal_sensor", "external_sensor"])
+    run.set_state("sensor.target_temperature_source_mode", "external_sensor", device_class="enum")
     for i in range(1, 6):
         run.set_state(f"sensor.source{i}", 19 + i, "°C")
     run.set_state("number.target_external_temperature_input", "20", "°C",
@@ -97,7 +97,7 @@ class ZblSourcesTests(unittest.TestCase):
         run = sources()
         run.dispatch_state("sensor.other", None, {"state": "20"})
         run.dispatch_state("sensor.target_temperature_source_mode", {"state": "on"}, None)
-        run.set_state("sensor.target_temperature_source_mode", "internal_sensor", device_class="enum", options=["internal_sensor", "external_sensor"])
+        run.set_state("sensor.target_temperature_source_mode", "internal_sensor", device_class="enum")
         run.fire("ha_started")
         self.assertEqual(run.calls, [])
         for integration in ("zha", "mqtt"):

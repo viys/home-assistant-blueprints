@@ -98,14 +98,14 @@ variables:
       {% endif %}
     {% endfor %}
     {{ ns.value }}
-  # The handler exposes FF03 as a read-only enum. Its options are the stable
-  # contract; translated display names and user-assigned entity IDs are ignored.
+  # The handler exposes FF03 as a read-only enum. Match its stable raw state;
+  # HA does not publish enum options as state attributes. Names are ignored.
   zha_temperature_source_status: >
     {% set ns = namespace(entities=[]) %}
     {% for entity in (device_entities(target_device) or []) %}
       {% if entity.startswith('sensor.')
             and state_attr(entity, 'device_class') == 'enum'
-            and state_attr(entity, 'options') == ['internal_sensor', 'external_sensor'] %}
+            and states(entity) in ['internal_sensor', 'external_sensor'] %}
         {% set ns.entities = ns.entities + [entity] %}
       {% endif %}
     {% endfor %}

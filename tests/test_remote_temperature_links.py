@@ -32,7 +32,7 @@ def single_source(case, integration="zha"):
     if model == "TRV-ZBL":
         run.entity_map["target"].append("sensor.target_temperature_source_mode")
         run.set_state("sensor.target_temperature_source_mode", "external_sensor",
-                      device_class="enum", options=["internal_sensor", "external_sensor"])
+                      device_class="enum")
     run.set_state("number.target_external_temperature_input", "20", "°C",
                   min=0, max=99.9, step=0.1)
     return run
@@ -87,7 +87,7 @@ class SingleSourceTests(unittest.TestCase):
             if case[1] == "TRV-ZBL":
                 switch = "sensor.target_temperature_source_mode"
                 off_value, on_value = "internal_sensor", "external_sensor"
-                attrs = dict(device_class="enum", options=[off_value, on_value])
+                attrs = dict(device_class="enum")
             old = run.set_state(switch, off_value, **attrs)
             run.fire("source_temperature")
             self.assertEqual(run.calls, [])

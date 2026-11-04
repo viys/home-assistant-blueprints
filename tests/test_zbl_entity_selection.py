@@ -12,8 +12,15 @@ class ZblEntitySelectionTests(unittest.TestCase):
         yield sources(integration), "source_changed", "sensor.source1"
 
     def status(self, run, entity, value="external_sensor", **attrs):
-        return run.set_state(entity, value, device_class="enum",
-                             options=["internal_sensor", "external_sensor"], **attrs)
+        return run.set_state(entity, value, device_class="enum", **attrs)
+
+    def test_real_ha_enum_state_without_options_enables_sync(self):
+        """HA enum sensors publish device_class and state, but not options."""
+        for run, trigger, source in self.instances():
+            entity = "sensor.target_temperature_source_mode"
+            run.set_state(entity, "external_sensor", device_class="enum")
+            run.fire(trigger, entity=source)
+            self.assertEqual(len(run.calls), 1, run.file.name)
 
     def test_localized_and_renamed_status_without_selection(self):
         for suffix in ("wen_du_lai_yuan", "temperaturquelle", "renamed_42"):
@@ -32,7 +39,7 @@ class ZblEntitySelectionTests(unittest.TestCase):
                     self.assertEqual(len(run.calls), 5 if "sources" in run.file.name else 1)
 
     def test_missing_foreign_ambiguous_unavailable_status_skips(self):
-        for problem in ("missing", "foreign", "duplicate", "unavailable", "unknown", "wrong_options"):
+        for problem in ("missing", "foreign", "duplicate", "unavailable", "unknown", "wrong_state"):
             for run, trigger, source in self.instances():
                 with self.subTest(file=run.file.name, problem=problem):
                     entity = "sensor.target_temperature_source_mode"
@@ -41,8 +48,8 @@ class ZblEntitySelectionTests(unittest.TestCase):
                     elif problem == "duplicate":
                         run.entity_map["target"].append("sensor.duplicate")
                         self.status(run, "sensor.duplicate")
-                    elif problem == "wrong_options":
-                        run.set_state(entity, "external_sensor", device_class="enum", options=["off", "on"])
+                    elif problem == "wrong_state":
+                        run.set_state(entity, "other_mode", device_class="enum")
                     else:
                         self.status(run, entity, problem)
                     # A legacy switch selection/name must not bypass the status contract.
