@@ -21,6 +21,10 @@ def single_source(case, integration="zha"):
     run.set_state("select.target_temperature_sensor_select", "external")
     run.set_state("number.target_external_temperature_input", "20", "°C",
                   min=0, max=99.9, step=0.1)
+    if model == "TP-WGZBA" and integration == "zha":
+        mode = "sensor.target_temperature_source_mode"
+        run.entity_map["target"][0] = mode
+        run.set_state(mode, "external_sensor", device_class="enum")
     return run
 
 
@@ -68,8 +72,10 @@ class SingleSourceChecks:
         # Source data remains valid while event filtering is exercised independently.
         for case in self.cases:
             run = single_source(case)
-            switch = "switch.target_external_temperature_sensor"
+            switch = run.entity_map["target"][0]
             off_value, on_value, attrs = "off", "on", {}
+            if switch.startswith("sensor."):
+                off_value, on_value, attrs = "internal_sensor", "external_sensor", {"device_class": "enum"}
             old = run.set_state(switch, off_value, **attrs)
             run.fire("source_temperature")
             self.assertEqual(run.calls, [])

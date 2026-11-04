@@ -15,10 +15,10 @@ def sources(integration="zha", version="0x00001006", extras=True):
                                source_entity_3="sensor.source3" if extras else ""))
     run.devices["target"] = dict(manufacturer="SONOFF", model="TP-WGZBA" if integration == "zha" else "Zigbee thermostat panel",
                                   identifiers=[(integration, "00:11")], sw_version=version)
-    run.entity_map["target"] = ["switch.target_external_temperature_sensor",
+    run.entity_map["target"] = ["sensor.target_temperature_source_mode",
                                 "select.target_temperature_sensor_select",
                                 "number.target_external_temperature_input"]
-    run.set_state("switch.target_external_temperature_sensor", "on")
+    run.set_state("sensor.target_temperature_source_mode", "external_sensor", device_class="enum")
     for index in (1, 2, 3):
         run.set_state(f"sensor.source{index}", str(19 + index), "°C")
     return run
@@ -47,9 +47,35 @@ class MultiSourceTests(unittest.TestCase):
         # Verify order and values, not merely the number of actions reached.
         for trigger in ("ha_started", "automation_reloaded", "source_changed"):
             run = sources()
-            run.fire(trigger, entity="switch.target_external_temperature_sensor", new_state={"state": "on"})
+            run.fire(trigger, entity="sensor.target_temperature_source_mode", new_state={"state": "external_sensor"})
             self.assertEqual([(call["data"]["attribute"], call["data"]["value"]) for call in run.calls],
                              [(0xFF11, 2000), (0xFF12, 2100), (0xFF13, 2200)])
+
+    def test_localized_mode_sensor_controls_zha_sync(self):
+        """Use the enum state even when the switch has no English suffix."""
+        # Both the mode sensor and the switch can have localized IDs.
+        run = sources()
+        mode = "sensor.target_temperaturquelle"
+        run.entity_map["target"][0] = "switch.target_externer_temperatursensor"
+        run.entity_map["target"].append(mode)
+        internal = run.set_state(mode, "internal_sensor", device_class="enum")
+        run.fire("ha_started")
+        self.assertEqual(run.calls, [])
+        external = run.set_state(mode, "external_sensor", device_class="enum")
+        run.dispatch_state(mode, internal, external)
+        self.assertEqual([call["data"]["attribute"] for call in run.calls],
+                         [0xFF11, 0xFF12, 0xFF13])
+
+    def test_unavailable_mode_does_not_fall_back_on_startup(self):
+        """Skip startup synchronization when the mode cannot be confirmed."""
+        # An enabled legacy switch must not authorize a full sync.
+        run = sources()
+        legacy_switch = "switch.target_external_temperature_sensor"
+        run.entity_map["target"].append(legacy_switch)
+        run.set_state(legacy_switch, "on")
+        run.set_state(run.entity_map["target"][0], "unavailable", device_class="enum")
+        run.fire("ha_started")
+        self.assertEqual(run.calls, [])
 
     def test_blank_optional_sources_unbind_only_on_full_sync(self):
         """Empty optional slots send the unbind sentinel during full synchronization."""
@@ -142,12 +168,12 @@ class MultiSourceTests(unittest.TestCase):
         """Reject disabled mode, unrelated events, and incompatible target metadata."""
         # The common condition filters are exercised separately from action choices.
         run = sources()
-        run.set_state("switch.target_external_temperature_sensor", "off")
+        run.set_state("sensor.target_temperature_source_mode", "internal_sensor", device_class="enum")
         run.fire("source_changed", entity="sensor.source1", new_state=run.states["sensor.source1"])
         self.assertEqual(run.calls, [])
         run = sources()
         run.fire("source_changed", entity="sensor.unrelated", new_state={"state": "on"})
-        run.fire("source_changed", entity="switch.target_external_temperature_sensor", new_state=None)
+        run.fire("source_changed", entity="sensor.target_temperature_source_mode", new_state=None)
         self.assertEqual(run.calls, [])
         for integration in ("zha", "mqtt"):
             for field, value in (("manufacturer", "OTHER"), ("model", "OTHER"), ("identifiers", [])):

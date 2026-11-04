@@ -69,12 +69,16 @@ variables:
   source_entities: >
     {{ [source_entity_1, source_entity_2, source_entity_3]
        | map('trim') | list }}
-  zha_external_temperature_sensor_switch: >
-    {{ (device_entities(target_device) or [])
-       | select('match', '^switch\\..*_external_temperature_sensor$')
-       | list
-       | first
-       | default('', true) }}
+  zha_temperature_source_mode: >
+    {%- set ns = namespace(entities=[]) -%}
+    {%- for entity in device_entities(target_device) or [] -%}
+      {%- if entity.startswith('sensor.')
+             and state_attr(entity, 'device_class') == 'enum'
+             and states(entity) in ['internal_sensor', 'external_sensor'] -%}
+        {%- set ns.entities = ns.entities + [entity] -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {{- ns.entities[0] if ns.entities | count == 1 else '' -}}
   mqtt_temperature_sensor_select: >
     {{ (device_entities(target_device) or [])
        | select('match', '^select\\..*_temperature_sensor_select$')
@@ -90,9 +94,9 @@ variables:
   full_sync: >
     {{ trigger.id in ['ha_started', 'automation_reloaded']
        or (trigger.id == 'source_changed'
-           and trigger.event.data.entity_id == zha_external_temperature_sensor_switch
+           and trigger.event.data.entity_id == zha_temperature_source_mode
            and trigger.event.data.new_state is not none
-           and trigger.event.data.new_state.state == 'on') }}
+           and trigger.event.data.new_state.state == 'external_sensor') }}
   target_ieee: >
     {%- for identifier in (device_attr(target_device, 'identifiers') or []) -%}
       {%- if identifier[0] == 'zha' -%}
@@ -158,17 +162,15 @@ conditions:
       {{ trigger.id in ['ha_started', 'automation_reloaded']
          or (trigger.id == 'source_changed'
              and (trigger.event.data.entity_id in source_entities
-                  or (trigger.event.data.entity_id == zha_external_temperature_sensor_switch
-                      and trigger.event.data.new_state is not none
-                      and trigger.event.data.new_state.state == 'on'))) }}
+                  or full_sync | bool)) }}
   - condition: template
     value_template: >
       {{ device_attr(target_device, 'manufacturer') == 'SONOFF'
          and ((target_integration | trim == 'zha'
                and device_attr(target_device, 'model') == 'TP-WGZBA'
                and target_ieee | trim != ''
-               and zha_external_temperature_sensor_switch | trim != ''
-               and is_state(zha_external_temperature_sensor_switch, 'on'))
+               and zha_temperature_source_mode | trim != ''
+               and is_state(zha_temperature_source_mode, 'external_sensor'))
               or (target_integration | trim == 'mqtt'
                   and device_attr(target_device, 'model') == 'Zigbee thermostat panel'
                   and mqtt_external_temperature_input | trim != ''

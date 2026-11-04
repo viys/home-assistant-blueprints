@@ -43,12 +43,16 @@ variables:
       {% endif %}
     {% endfor %}
     {{ ns.value }}
-  zha_external_temperature_sensor_switch: >
-    {{ (device_entities(target_device) or [])
-       | select('match', '^switch\\..*_external_temperature_sensor$')
-       | list
-       | first
-       | default('', true) }}
+  zha_temperature_source_mode: >
+    {%- set ns = namespace(entities=[]) -%}
+    {%- for entity in device_entities(target_device) or [] -%}
+      {%- if entity.startswith('sensor.')
+             and state_attr(entity, 'device_class') == 'enum'
+             and states(entity) in ['internal_sensor', 'external_sensor'] -%}
+        {%- set ns.entities = ns.entities + [entity] -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {{- ns.entities[0] if ns.entities | count == 1 else '' -}}
   mqtt_temperature_sensor_select: >
     {{ (device_entities(target_device) or [])
        | select('match', '^select\\..*_temperature_sensor_select$')
@@ -89,12 +93,12 @@ conditions:
          and ((target_integration | trim == 'zha'
                and device_attr(target_device, 'model') == 'TP-WGZBA'
                and target_ieee | trim != ''
-               and zha_external_temperature_sensor_switch | trim != ''
-               and is_state(zha_external_temperature_sensor_switch, 'on')
+               and zha_temperature_source_mode | trim != ''
+               and is_state(zha_temperature_source_mode, 'external_sensor')
                and (trigger.id == 'source_temperature'
-                    or (trigger.event.data.entity_id == zha_external_temperature_sensor_switch
+                    or (trigger.event.data.entity_id == zha_temperature_source_mode
                         and trigger.event.data.new_state is not none
-                        and trigger.event.data.new_state.state == 'on')))
+                        and trigger.event.data.new_state.state == 'external_sensor')))
               or (target_integration | trim == 'mqtt'
                   and device_attr(target_device, 'model') == 'Zigbee thermostat panel'
                   and mqtt_external_temperature_input | trim != ''
