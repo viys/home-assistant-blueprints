@@ -32,16 +32,15 @@ blueprint:
               model: Zigbee thermostatic radiator valve
               model_id: TRV-ZBL
     external_temperature_control:
-      name: External temperature control
+      name: Zigbee2MQTT temperature input (optional for ZHA)
       description: >
-        Select the target device's external temperature sensor switch for ZHA,
-        or its external temperature input for Zigbee2MQTT. Names may be in any
-        language. When updating an existing automation, select this control again.
+        Leave empty for ZHA; the updated device handler detects external
+        temperature mode automatically. For Zigbee2MQTT, select the target
+        device's external temperature input. Names may be in any language.
+      default: ""
       selector:
         entity:
           filter:
-            - domain: switch
-              integration: zha
             - domain: number
               integration: mqtt
     source_entity_1:
@@ -111,7 +110,18 @@ variables:
       {% endif %}
     {% endfor %}
     {{ ns.value }}
-  zha_external_temperature_sensor_switch: !input external_temperature_control
+  # The handler exposes FF03 as a read-only enum. Its options are the stable
+  # contract; translated display names and user-assigned entity IDs are ignored.
+  zha_temperature_source_status: >
+    {% set ns = namespace(entities=[]) %}
+    {% for entity in (device_entities(target_device) or []) %}
+      {% if entity.startswith('sensor.')
+            and state_attr(entity, 'device_class') == 'enum'
+            and state_attr(entity, 'options') == ['internal_sensor', 'external_sensor'] %}
+        {% set ns.entities = ns.entities + [entity] %}
+      {% endif %}
+    {% endfor %}
+    {{ ns.entities[0] if ns.entities | count == 1 else '' }}
   mqtt_external_temperature_input: !input external_temperature_control
   target_ieee: >
     {%- for identifier in (device_attr(target_device, 'identifiers') or []) -%}
@@ -122,9 +132,9 @@ variables:
   full_sync: >
     {{ trigger.id in ['ha_started', 'automation_reloaded']
        or (trigger.id == 'source_changed'
-           and trigger.event.data.entity_id == zha_external_temperature_sensor_switch
+           and trigger.event.data.entity_id == zha_temperature_source_status
            and trigger.event.data.new_state is not none
-           and trigger.event.data.new_state.state == 'on') }}
+           and trigger.event.data.new_state.state == 'external_sensor') }}
 
 triggers:
   - trigger: event
@@ -149,9 +159,9 @@ conditions:
          and ((target_integration | trim == 'zha'
                and device_attr(target_device, 'model') == 'TRV-ZBL'
                and target_ieee | trim != ''
-               and zha_external_temperature_sensor_switch.startswith('switch.')
-               and zha_external_temperature_sensor_switch in (device_entities(target_device) or [])
-               and is_state(zha_external_temperature_sensor_switch, 'on'))
+               and zha_temperature_source_status.startswith('sensor.')
+               and zha_temperature_source_status in (device_entities(target_device) or [])
+               and is_state(zha_temperature_source_status, 'external_sensor'))
               or (target_integration | trim == 'mqtt'
                   and device_attr(target_device, 'model') == 'Zigbee thermostatic radiator valve'
                   and mqtt_external_temperature_input.startswith('number.')

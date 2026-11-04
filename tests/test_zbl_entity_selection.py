@@ -1,4 +1,4 @@
-"""Check language-independent entity selection in both ZBL blueprints."""
+"""Check automatic, language-independent ZBL mode discovery."""
 
 import unittest
 
@@ -7,68 +7,70 @@ from test_remote_temperature_sources_link_trv_zbl import sources
 
 
 class ZblEntitySelectionTests(unittest.TestCase):
-    """Use selected entities instead of translated names or English suffixes."""
-
-    def instances(self, integration):
-        """Yield both actual blueprints and their source event identifiers."""
+    def instances(self, integration="zha"):
         yield single_source(CASES[1], integration), "source_temperature", "sensor.source"
         yield sources(integration), "source_changed", "sensor.source1"
 
-    def test_localized_and_renamed_controls(self):
-        """Chinese, German and arbitrary names all route to the selected control."""
-        for suffix in ("wai_bu_wen_du", "externer_temperatursensor", "renamed_control_42"):
-            for integration in ("zha", "mqtt"):
-                for run, trigger, source in self.instances(integration):
-                    with self.subTest(file=run.file.name, integration=integration, suffix=suffix):
-                        domain = "switch" if integration == "zha" else "number"
-                        entity = f"{domain}.{suffix}"
-                        input_name = "external_temperature_control"
-                        # Remove every conventional target name: only the selected entity exists.
-                        run.entity_map["target"] = [entity]
-                        run.inputs[input_name] = entity
-                        run.set_state(entity, "on" if integration == "zha" else "0")
-                        run.fire(trigger, entity=source)
-                        self.assertEqual(len(run.calls), 1)
-                        if integration == "mqtt":
-                            self.assertEqual(run.calls[0]["target"], {"entity_id": entity})
-                            self.assertEqual(run.calls[0]["data"]["value"], 20)
-                        else:
-                            self.assertEqual(run.calls[0]["data"]["value"], 2000)
-                            run.calls.clear()
-                            run.set_state(entity, "off")
-                            run.fire(trigger, entity=source)
-                            self.assertEqual(run.calls, [])
-                            run.dispatch_state(entity, {"state": "off"}, run.set_state(entity, "on"))
-                            self.assertTrue(run.calls)
+    def status(self, run, entity, value="external_sensor", **attrs):
+        return run.set_state(entity, value, device_class="enum",
+                             options=["internal_sensor", "external_sensor"], **attrs)
 
-    def test_missing_or_foreign_selection_does_not_fall_back_to_names(self):
-        """Existing English-named controls must not silently override configuration."""
-        for integration in ("zha", "mqtt"):
-            for selection in ("", "switch.other" if integration == "zha" else "number.other"):
-                for run, trigger, source in self.instances(integration):
-                    input_name = "external_temperature_control"
-                    run.inputs[input_name] = selection
-                    if selection:
-                        run.set_state(selection, "on" if integration == "zha" else "0")
+    def test_localized_and_renamed_status_without_selection(self):
+        for suffix in ("wen_du_lai_yuan", "temperaturquelle", "renamed_42"):
+            for run, trigger, source in self.instances():
+                with self.subTest(file=run.file.name, suffix=suffix):
+                    entity = f"sensor.{suffix}"
+                    run.entity_map["target"] = [entity]
+                    run.inputs["external_temperature_control"] = ""
+                    self.status(run, entity, friendly_name="任意名称")
                     run.fire(trigger, entity=source)
-                    self.assertEqual(run.calls, [], (run.file.name, integration, selection))
+                    self.assertEqual(run.calls[0]["data"]["value"], 2000)
+                    run.calls.clear()
+                    old = self.status(run, entity, "internal_sensor")
+                    run.fire(trigger, entity=source)
+                    self.assertEqual(run.calls, [])
+                    run.dispatch_state(entity, old, self.status(run, entity))
+                    self.assertEqual(len(run.calls), 5 if "sources" in run.file.name else 1)
 
-    def test_shared_selector_and_wrong_domain(self):
-        """One selector offers both integrations, but dispatch rejects the wrong type."""
-        for integration in ("zha", "mqtt"):
-            for run, trigger, source in self.instances(integration):
-                inputs = run.doc["blueprint"]["input"]
-                self.assertNotIn("external_temperature_switch", inputs)
-                self.assertNotIn("external_temperature_input", inputs)
-                self.assertEqual(inputs["external_temperature_control"]["selector"]["entity"]["filter"],
-                                 [dict(domain="switch", integration="zha"),
-                                  dict(domain="number", integration="mqtt")])
-                entity = "number.wrong_type" if integration == "zha" else "switch.wrong_type"
-                run.inputs["external_temperature_control"] = entity
-                run.entity_map["target"].append(entity)
-                run.set_state(entity, "on")
+    def test_missing_foreign_ambiguous_unavailable_status_skips(self):
+        for problem in ("missing", "foreign", "duplicate", "unavailable", "unknown", "wrong_options"):
+            for run, trigger, source in self.instances():
+                with self.subTest(file=run.file.name, problem=problem):
+                    entity = "sensor.target_temperature_source_mode"
+                    if problem in ("missing", "foreign"):
+                        run.entity_map["target"].remove(entity)
+                    elif problem == "duplicate":
+                        run.entity_map["target"].append("sensor.duplicate")
+                        self.status(run, "sensor.duplicate")
+                    elif problem == "wrong_options":
+                        run.set_state(entity, "external_sensor", device_class="enum", options=["off", "on"])
+                    else:
+                        self.status(run, entity, problem)
+                    # A legacy switch selection/name must not bypass the status contract.
+                    run.inputs["external_temperature_control"] = "switch.target_external_temperature_sensor"
+                    run.set_state("switch.target_external_temperature_sensor", "on")
+                    run.fire(trigger, entity=source)
+                    self.assertEqual(run.calls, [])
+
+    def test_mqtt_localized_input_and_invalid_selection(self):
+        for run, trigger, source in self.instances("mqtt"):
+            entity = "number.renamed_input"
+            run.entity_map["target"] = [entity]
+            run.inputs["external_temperature_control"] = entity
+            run.fire(trigger, entity=source)
+            self.assertEqual(run.calls[0]["target"], {"entity_id": entity})
+            for selection in ("", "number.other", "switch.wrong_type"):
+                run.calls.clear()
+                run.inputs["external_temperature_control"] = selection
                 run.fire(trigger, entity=source)
                 self.assertEqual(run.calls, [])
+
+    def test_control_input_is_optional_and_mqtt_only(self):
+        for run, _, _ in self.instances():
+            control = run.doc["blueprint"]["input"]["external_temperature_control"]
+            self.assertEqual(control["default"], "")
+            self.assertEqual(control["selector"]["entity"]["filter"],
+                             [dict(domain="number", integration="mqtt")])
 
 
 if __name__ == "__main__":

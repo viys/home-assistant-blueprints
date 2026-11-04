@@ -20,7 +20,7 @@ def single_source(case, integration="zha"):
     file, model, mqtt_model, _ = case
     inputs = dict(target_device="target", source_entity="sensor.source")
     if model == "TRV-ZBL":
-        inputs.update(external_temperature_control=("switch.target_external_temperature_sensor"
+        inputs.update(external_temperature_control=(""
                                                    if integration == "zha" else "number.target_external_temperature_input"))
     run = BlueprintRunner(ROOT / "automation/sonoff" / file, inputs)
     run.devices["target"] = dict(manufacturer="SONOFF", model=model if integration == "zha" else mqtt_model,
@@ -32,6 +32,10 @@ def single_source(case, integration="zha"):
     run.set_state("sensor.source", "20", "°C")
     run.set_state("switch.target_external_temperature_sensor", "on")
     run.set_state("select.target_temperature_sensor_select", "external")
+    if model == "TRV-ZBL":
+        run.entity_map["target"].append("sensor.target_temperature_source_mode")
+        run.set_state("sensor.target_temperature_source_mode", "external_sensor",
+                      device_class="enum", options=["internal_sensor", "external_sensor"])
     return run
 
 
@@ -80,16 +84,21 @@ class SingleSourceTests(unittest.TestCase):
         for case in CASES:
             run = single_source(case)
             switch = "switch.target_external_temperature_sensor"
-            old = run.set_state(switch, "off")
+            off_value, on_value, attrs = "off", "on", {}
+            if case[1] == "TRV-ZBL":
+                switch = "sensor.target_temperature_source_mode"
+                off_value, on_value = "internal_sensor", "external_sensor"
+                attrs = dict(device_class="enum", options=[off_value, on_value])
+            old = run.set_state(switch, off_value, **attrs)
             run.fire("source_temperature")
             self.assertEqual(run.calls, [])
-            new = run.set_state(switch, "on")
+            new = run.set_state(switch, on_value, **attrs)
             run.dispatch_state(switch, old, new)
             self.assertEqual(len(run.calls), 1, case[0])
             run.calls.clear()
             run.dispatch_state("sensor.unrelated", None, {"state": "on"})
             run.dispatch_state(switch, new, None)
-            off = run.set_state(switch, "off")
+            off = run.set_state(switch, off_value, **attrs)
             run.dispatch_state(switch, new, off)
             self.assertEqual(run.calls, [])
 

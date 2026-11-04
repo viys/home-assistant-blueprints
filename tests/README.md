@@ -145,12 +145,18 @@ and Zigbee2MQTT's source-1-only fallback. The blueprint targets Home Assistant
 `config/zha_quirks/trv_zbl.py` implementation supplies this contract; a legacy
 single-source handler does not. Firmware performs the average, not the blueprint.
 
-Both ZBL temperature blueprints use one required external temperature control
-selector: a mode switch for ZHA or an input number for Zigbee2MQTT. Existing
-automations must reselect this control after upgrading from the separate inputs.
-Tests cover the combined selector, wrong entity domains, translated and renamed entities,
-mode enable/disable, missing selections, and rejection of controls belonging to
-another device. No entity-name suffix is used to discover these controls.
+Both ZBL temperature blueprints discover ZHA mode automatically from a read-only
+`enum` sensor on the selected device. The handler exposes the existing `0xFF03`
+attribute with options `internal_sensor` and `external_sensor`. Exactly one
+matching sensor must exist; missing, ambiguous or unavailable status blocks
+writes. The original switch still controls the mode. Update the device handler
+and restart Home Assistant before using these blueprints. Keep this diagnostic
+sensor enabled. Existing ZHA control selections are ignored; no reselection is
+needed. Zigbee2MQTT still requires its input number in the optional control field.
+Tests cover translated/renamed status entities, mode enable/disable, discovery
+failures, startup/reload, and MQTT input validation. Entity-name suffixes are not
+used for discovery. Offline tests simulate the handler's published state; validate
+the quirk enum mapping and entity creation in the installed ZHA runtime as well.
 
 Before release, import the multi-source blueprint into a test instance with
 that handler and five-source firmware. Disable the old temperature automation,

@@ -12,14 +12,14 @@ def sources(integration="zha", count=5):
               for i in range(1, 6)}
     run = BlueprintRunner(ROOT / "automation/sonoff/remote_temperature_sources_link_trv_zbl.yaml",
                           dict(target_device="target",
-                               external_temperature_control=("switch.target_external_temperature_sensor"
+                               external_temperature_control=(""
                                                              if integration == "zha" else "number.target_external_temperature_input"), **inputs))
     run.devices["target"] = dict(manufacturer="SONOFF", identifiers=[(integration, "00:11")],
                                   model="TRV-ZBL" if integration == "zha" else "Zigbee thermostatic radiator valve")
-    run.entity_map["target"] = ["switch.target_external_temperature_sensor",
+    run.entity_map["target"] = ["sensor.target_temperature_source_mode",
                                 "select.target_temperature_sensor_select",
                                 "number.target_external_temperature_input"]
-    run.set_state("switch.target_external_temperature_sensor", "on")
+    run.set_state("sensor.target_temperature_source_mode", "external_sensor", device_class="enum", options=["internal_sensor", "external_sensor"])
     for i in range(1, 6):
         run.set_state(f"sensor.source{i}", 19 + i, "°C")
     return run
@@ -27,32 +27,6 @@ def sources(integration="zha", count=5):
 
 class ZblSourcesTests(unittest.TestCase):
     """Verify independent slots, invalidation, lifecycle sync, and MQTT fallback."""
-
-    def test_explicit_localized_switch_enables_sync(self):
-        """Localized or renamed switches must not silently block all writes."""
-        run = sources(count=2)
-        switch = "switch.sonoff_trv_zbl_wai_bu_wen_du_chuan_gan_qi"
-        run.entity_map["target"][0] = switch
-        run.inputs["external_temperature_control"] = switch
-        run.set_state(switch, "on")
-        run.fire("ha_started")
-        self.assertEqual(len(run.calls), 5)
-        self.assertEqual([c["data"]["value"] for c in run.calls], [2000, 2100, -32768, -32768, -32768])
-        run.calls.clear()
-        run.dispatch_state(switch, {"state": "off"}, run.states[switch])
-        self.assertEqual(len(run.calls), 5)
-        run.calls.clear()
-        run.set_state(switch, "off")
-        run.fire("source_changed", entity="sensor.source1")
-        self.assertEqual(run.calls, [])
-
-    def test_explicit_switch_must_belong_to_target(self):
-        """A selected switch from another device cannot enable synchronization."""
-        run = sources()
-        run.inputs["external_temperature_control"] = "switch.other"
-        run.set_state("switch.other", "on")
-        run.fire("ha_started")
-        self.assertEqual(run.calls, [])
 
     def test_each_source_and_unit_routes_to_its_own_slot(self):
         """The valve receives individual centidegree values, not a gateway average."""
@@ -74,7 +48,7 @@ class ZblSourcesTests(unittest.TestCase):
         for count in range(1, 6):
             for trigger in ("ha_started", "automation_reloaded", "source_changed"):
                 run = sources(count=count)
-                run.fire(trigger, entity="switch.target_external_temperature_sensor", new_state={"state": "on"})
+                run.fire(trigger, entity="sensor.target_temperature_source_mode", new_state={"state": "external_sensor"})
                 self.assertEqual([(c["data"]["attribute"], c["data"]["value"]) for c in run.calls],
                                  [(0xFF10 + i, (19 + i) * 100 if i <= count else -32768)
                                   for i in range(1, 6)])
@@ -121,8 +95,8 @@ class ZblSourcesTests(unittest.TestCase):
         """Only compatible enabled targets and relevant events may write."""
         run = sources()
         run.dispatch_state("sensor.other", None, {"state": "20"})
-        run.dispatch_state("switch.target_external_temperature_sensor", {"state": "on"}, None)
-        run.set_state("switch.target_external_temperature_sensor", "off")
+        run.dispatch_state("sensor.target_temperature_source_mode", {"state": "on"}, None)
+        run.set_state("sensor.target_temperature_source_mode", "internal_sensor", device_class="enum", options=["internal_sensor", "external_sensor"])
         run.fire("ha_started")
         self.assertEqual(run.calls, [])
         for integration in ("zha", "mqtt"):
