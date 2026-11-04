@@ -20,8 +20,8 @@ def single_source(case, integration="zha"):
     file, model, mqtt_model, _ = case
     inputs = dict(target_device="target", source_entity="sensor.source")
     if model == "TRV-ZBL":
-        inputs.update(external_temperature_switch="switch.target_external_temperature_sensor",
-                      external_temperature_input="number.target_external_temperature_input")
+        inputs.update(external_temperature_control=("switch.target_external_temperature_sensor"
+                                                   if integration == "zha" else "number.target_external_temperature_input"))
     run = BlueprintRunner(ROOT / "automation/sonoff" / file, inputs)
     run.devices["target"] = dict(manufacturer="SONOFF", model=model if integration == "zha" else mqtt_model,
                                   model_id=model, identifiers=[(integration, "00:11")])

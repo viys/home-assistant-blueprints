@@ -22,7 +22,7 @@ class ZblEntitySelectionTests(unittest.TestCase):
                     with self.subTest(file=run.file.name, integration=integration, suffix=suffix):
                         domain = "switch" if integration == "zha" else "number"
                         entity = f"{domain}.{suffix}"
-                        input_name = "external_temperature_switch" if integration == "zha" else "external_temperature_input"
+                        input_name = "external_temperature_control"
                         # Remove every conventional target name: only the selected entity exists.
                         run.entity_map["target"] = [entity]
                         run.inputs[input_name] = entity
@@ -46,12 +46,29 @@ class ZblEntitySelectionTests(unittest.TestCase):
         for integration in ("zha", "mqtt"):
             for selection in ("", "switch.other" if integration == "zha" else "number.other"):
                 for run, trigger, source in self.instances(integration):
-                    input_name = "external_temperature_switch" if integration == "zha" else "external_temperature_input"
+                    input_name = "external_temperature_control"
                     run.inputs[input_name] = selection
                     if selection:
                         run.set_state(selection, "on" if integration == "zha" else "0")
                     run.fire(trigger, entity=source)
                     self.assertEqual(run.calls, [], (run.file.name, integration, selection))
+
+    def test_shared_selector_and_wrong_domain(self):
+        """One selector offers both integrations, but dispatch rejects the wrong type."""
+        for integration in ("zha", "mqtt"):
+            for run, trigger, source in self.instances(integration):
+                inputs = run.doc["blueprint"]["input"]
+                self.assertNotIn("external_temperature_switch", inputs)
+                self.assertNotIn("external_temperature_input", inputs)
+                self.assertEqual(inputs["external_temperature_control"]["selector"]["entity"]["filter"],
+                                 [dict(domain="switch", integration="zha"),
+                                  dict(domain="number", integration="mqtt")])
+                entity = "number.wrong_type" if integration == "zha" else "switch.wrong_type"
+                run.inputs["external_temperature_control"] = entity
+                run.entity_map["target"].append(entity)
+                run.set_state(entity, "on")
+                run.fire(trigger, entity=source)
+                self.assertEqual(run.calls, [])
 
 
 if __name__ == "__main__":
