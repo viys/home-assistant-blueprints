@@ -23,6 +23,30 @@ blueprint:
               manufacturer: SONOFF
               model: Zigbee thermostatic radiator valve
               model_id: TRV-ZBL
+    external_temperature_switch:
+      name: External temperature mode switch (ZHA)
+      description: >
+        Required for ZHA. Select the target device's external temperature sensor
+        switch in any language. Leave empty for Zigbee2MQTT. When updating an
+        existing automation, select this switch before enabling synchronization.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: switch
+              integration: zha
+    external_temperature_input:
+      name: External temperature input (Zigbee2MQTT)
+      description: >
+        Required for Zigbee2MQTT. Select the target device's external temperature
+        input in any language. Leave empty for ZHA. When updating an existing
+        automation, select this input before enabling synchronization.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: number
+              integration: mqtt
     source_entity:
       name: External temperature sensor
       description: Select a temperature sensor from another device. The target TRV-ZBL's own temperature is not a valid source.
@@ -45,24 +69,8 @@ variables:
       {% endif %}
     {% endfor %}
     {{ ns.value }}
-  zha_external_temperature_sensor_switch: >
-    {{ (device_entities(target_device) or [])
-       | select('match', '^switch\\..*_external_temperature_sensor$')
-       | list
-       | first
-       | default('', true) }}
-  mqtt_temperature_sensor_select: >
-    {{ (device_entities(target_device) or [])
-       | select('match', '^select\\..*_temperature_sensor_select$')
-       | list
-       | first
-       | default('', true) }}
-  mqtt_external_temperature_input: >
-    {{ (device_entities(target_device) or [])
-       | select('match', '^number\\..*_external_temperature_input$')
-       | list
-       | first
-       | default('', true) }}
+  zha_external_temperature_sensor_switch: !input external_temperature_switch
+  mqtt_external_temperature_input: !input external_temperature_input
   target_ieee: >
     {%- for identifier in (device_attr(target_device, 'identifiers') or []) -%}
       {%- if identifier[0] == 'zha' -%}
@@ -92,6 +100,7 @@ conditions:
                and device_attr(target_device, 'model') == 'TRV-ZBL'
                and target_ieee | trim != ''
                and zha_external_temperature_sensor_switch | trim != ''
+               and zha_external_temperature_sensor_switch in (device_entities(target_device) or [])
                and is_state(zha_external_temperature_sensor_switch, 'on')
                and (trigger.id == 'source_temperature'
                     or (trigger.event.data.entity_id == zha_external_temperature_sensor_switch
@@ -100,7 +109,7 @@ conditions:
               or (target_integration | trim == 'mqtt'
                   and device_attr(target_device, 'model') == 'Zigbee thermostatic radiator valve'
                   and mqtt_external_temperature_input | trim != ''
-                  and mqtt_temperature_sensor_select | trim != ''
+                  and mqtt_external_temperature_input in (device_entities(target_device) or [])
                   and trigger.id == 'source_temperature')) }}
 
 actions:
@@ -129,7 +138,7 @@ actions:
             value_template: >
               {{ target_integration | trim == 'mqtt'
                  and mqtt_external_temperature_input | trim != ''
-                 and mqtt_temperature_sensor_select | trim != ''
+                 and mqtt_external_temperature_input in (device_entities(target_device) or [])
                  and trigger.id == 'source_temperature' }}
         sequence:
           - action: number.set_value
