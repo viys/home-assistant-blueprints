@@ -136,6 +136,25 @@ values, command ordering, error behavior, and skipped writes.
 
 ## Validation scope
 
+TRV-ZBL multi-source tests cover five independent ZHA slots, unit conversion,
+the firmware's -30 to 100 °C range, startup/reload/enable synchronization,
+empty/invalid/duplicate/self-source removal, recovery, service-error isolation,
+and Zigbee2MQTT's source-1-only fallback. The blueprint targets Home Assistant
+2025.10 or newer and requires a ZHA handler mapping `0xFF11`–`0xFF15` to
+`0x601E:T=0x03` sensor IDs 1–5, with `-32768` unbinding a slot. The local
+`config/zha_quirks/trv_zbl.py` implementation supplies this contract; a legacy
+single-source handler does not. Firmware performs the average, not the blueprint.
+
+Before release, import the multi-source blueprint into a test instance with
+that handler and five-source firmware. Disable the old temperature automation,
+enable external temperature mode, then verify 20 °C and 24 °C produce 22 °C;
+add all five sources and change each independently. Check unavailable/recovered
+sources, empty slots after reload, restart, mode enable, and MQTT source 1.
+Offline tests do not validate device averaging, Zigbee delivery, the two-hour
+per-source timeout, or Home Assistant queue behavior. No periodic refresh is
+sent: unchanged sources expire according to the firmware unless HA receives
+another state-change event for that source.
+
 Structural checks cover all discovered blueprints. Behavior coverage depends
 on the available test cases; a passing CI run does not imply every blueprint
 behavior is tested. These checks do not validate the complete Home Assistant
