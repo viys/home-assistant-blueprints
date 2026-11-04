@@ -31,18 +31,6 @@ blueprint:
               manufacturer: SONOFF
               model: Zigbee thermostatic radiator valve
               model_id: TRV-ZBL
-    external_temperature_control:
-      name: Zigbee2MQTT temperature input (optional for ZHA)
-      description: >
-        Leave empty for ZHA; the updated device handler detects external
-        temperature mode automatically. For Zigbee2MQTT, select the target
-        device's external temperature input. Names may be in any language.
-      default: ""
-      selector:
-        entity:
-          filter:
-            - domain: number
-              integration: mqtt
     source_entity_1:
       name: Remote temperature source 1
       description: >
@@ -122,7 +110,20 @@ variables:
       {% endif %}
     {% endfor %}
     {{ ns.entities[0] if ns.entities | count == 1 else '' }}
-  mqtt_external_temperature_input: !input external_temperature_control
+  # Match the converter's external_temperature_input expose contract, not its
+  # translated name. Require a unique match on this device before writing.
+  mqtt_external_temperature_input: >
+    {% set ns = namespace(entities=[]) %}
+    {% for entity in (device_entities(target_device) or []) %}
+      {% if entity.startswith('number.')
+            and state_attr(entity, 'unit_of_measurement') == '°C'
+            and state_attr(entity, 'min') == 0
+            and state_attr(entity, 'max') == 99.9
+            and state_attr(entity, 'step') == 0.1 %}
+        {% set ns.entities = ns.entities + [entity] %}
+      {% endif %}
+    {% endfor %}
+    {{ ns.entities[0] if ns.entities | count == 1 else '' }}
   target_ieee: >
     {%- for identifier in (device_attr(target_device, 'identifiers') or []) -%}
       {%- if identifier[0] == 'zha' -%}

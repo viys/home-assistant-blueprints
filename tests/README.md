@@ -152,7 +152,11 @@ matching sensor must exist; missing, ambiguous or unavailable status blocks
 writes. The original switch still controls the mode. Update the device handler
 and restart Home Assistant before using these blueprints. Keep this diagnostic
 sensor enabled. Existing ZHA control selections are ignored; no reselection is
-needed. Zigbee2MQTT still requires its input number in the optional control field.
+needed. Neither blueprint has a control selector. Zigbee2MQTT discovers exactly
+one number on the selected device with unit `°C`, min `0`, max `99.9`, and step
+`0.1`, matching the device converter's `external_temperature_input` expose.
+Missing or ambiguous matches block writes; old manual selections are ignored.
+Keep the converter's unit/range/step contract intact when changing that expose.
 Tests cover translated/renamed status entities, mode enable/disable, discovery
 failures, startup/reload, and MQTT input validation. Entity-name suffixes are not
 used for discovery. Offline tests simulate the handler's published state; validate

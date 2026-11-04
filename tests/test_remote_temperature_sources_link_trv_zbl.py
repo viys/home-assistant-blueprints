@@ -12,8 +12,7 @@ def sources(integration="zha", count=5):
               for i in range(1, 6)}
     run = BlueprintRunner(ROOT / "automation/sonoff/remote_temperature_sources_link_trv_zbl.yaml",
                           dict(target_device="target",
-                               external_temperature_control=(""
-                                                             if integration == "zha" else "number.target_external_temperature_input"), **inputs))
+                               **inputs))
     run.devices["target"] = dict(manufacturer="SONOFF", identifiers=[(integration, "00:11")],
                                   model="TRV-ZBL" if integration == "zha" else "Zigbee thermostatic radiator valve")
     run.entity_map["target"] = ["sensor.target_temperature_source_mode",
@@ -22,6 +21,8 @@ def sources(integration="zha", count=5):
     run.set_state("sensor.target_temperature_source_mode", "external_sensor", device_class="enum", options=["internal_sensor", "external_sensor"])
     for i in range(1, 6):
         run.set_state(f"sensor.source{i}", 19 + i, "°C")
+    run.set_state("number.target_external_temperature_input", "20", "°C",
+                  min=0, max=99.9, step=0.1)
     return run
 
 
