@@ -60,8 +60,12 @@ appeared in a run. Adding this workflow alone does not make checks required.
 If a rule already requires the previous check names, update it to the new
 `Checks / …` names after the split workflow has run.
 
-Add new files named `test_*.py` under `tests/`; discovery includes them
-automatically. Tests run offline without Home Assistant credentials or devices.
+Place each blueprint's dedicated tests directly under `tests/` as
+`test_<blueprint>.py`, matching the YAML filename stem. Put repository-wide
+checks and shared test utilities in `tests/common/`. Give utilities names
+without the `test_` prefix. The structural suite checks for missing or extra
+blueprint test files.
+Tests run offline without Home Assistant credentials or devices.
 
 ## Adding tests
 
