@@ -133,23 +133,17 @@ actions:
                 {{ (((temperature - 32) * 5 / 9 if unit == '°F'
                      else temperature - 273.15 if unit == 'K'
                      else temperature) * 100) | round(0) | int }}
-      - conditions:
-          - condition: template
-            value_template: >
-              {{ target_integration | trim == 'mqtt'
-                 and mqtt_external_temperature_input | trim != ''
-                 and mqtt_external_temperature_input in (device_entities(target_device) or [])
-                 and trigger.id == 'source_temperature' }}
-        sequence:
-          - action: number.set_value
-            target:
-              entity_id: "{{ mqtt_external_temperature_input | trim }}"
-            data:
-              value: >
-                {% set temperature = states(source_entity) | float %}
-                {% set unit = state_attr(source_entity, 'unit_of_measurement') %}
-                {{ (temperature - 32) * 5 / 9 if unit == '°F'
-                   else temperature - 273.15 if unit == 'K'
-                   else temperature }}
+    # The global conditions admit only enabled ZHA or validated MQTT updates.
+    default:
+      - action: number.set_value
+        target:
+          entity_id: "{{ mqtt_external_temperature_input | trim }}"
+        data:
+          value: >
+            {% set temperature = states(source_entity) | float %}
+            {% set unit = state_attr(source_entity, 'unit_of_measurement') %}
+            {{ (temperature - 32) * 5 / 9 if unit == '°F'
+               else temperature - 273.15 if unit == 'K'
+               else temperature }}
 
 mode: restart
