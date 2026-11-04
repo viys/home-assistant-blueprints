@@ -145,6 +145,12 @@ and Zigbee2MQTT's source-1-only fallback. The blueprint targets Home Assistant
 `config/zha_quirks/trv_zbl.py` implementation supplies this contract; a legacy
 single-source handler does not. Firmware performs the average, not the blueprint.
 
+Both ZBL temperature blueprints require an explicitly selected external mode
+switch for ZHA or temperature input number for Zigbee2MQTT, including when
+upgrading an existing automation. Tests cover translated and renamed entities,
+mode enable/disable, missing selections, and rejection of controls belonging to
+another device. No entity-name suffix is used to discover these controls.
+
 Before release, import the multi-source blueprint into a test instance with
 that handler and five-source firmware. Disable the old temperature automation,
 enable external temperature mode, then verify 20 °C and 24 °C produce 22 °C;

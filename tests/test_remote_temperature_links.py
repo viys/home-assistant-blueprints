@@ -18,8 +18,11 @@ def single_source(case, integration="zha"):
     """Configure a real blueprint with explicit target entities and source state."""
     # Shared fixture setup avoids four separate copies of the same execution model.
     file, model, mqtt_model, _ = case
-    run = BlueprintRunner(ROOT / "automation/sonoff" / file,
-                          dict(target_device="target", source_entity="sensor.source"))
+    inputs = dict(target_device="target", source_entity="sensor.source")
+    if model == "TRV-ZBL":
+        inputs.update(external_temperature_switch="switch.target_external_temperature_sensor",
+                      external_temperature_input="number.target_external_temperature_input")
+    run = BlueprintRunner(ROOT / "automation/sonoff" / file, inputs)
     run.devices["target"] = dict(manufacturer="SONOFF", model=model if integration == "zha" else mqtt_model,
                                   model_id=model, identifiers=[(integration, "00:11")])
     run.entity_map["target"] = ["switch.target_external_temperature_sensor",
