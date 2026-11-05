@@ -34,8 +34,9 @@ blueprint:
     source_entity_1:
       name: Remote temperature source 1
       description: >
-        Required. Select a temperature sensor from another device, between
-        -30 and 100 °C after conversion. Use a different sensor for each source.
+        Required. Select a temperature sensor from another device. Numeric
+        readings are forwarded without temperature range filtering for the
+        valve to validate. Use a different sensor for each source.
       selector:
         entity:
           filter:
@@ -214,11 +215,11 @@ actions:
                     attribute: "{{ 65296 + repeat.index }}"
                     value: >
                       {{ (temperature_c * 100) | round(0) | int
-                         if source_valid | bool and -30 <= temperature_c <= 100
+                         if source_valid | bool
                          else -32768 }}
             - conditions:
                 - condition: template
-                  value_template: "{{ source_valid | bool and -30 <= temperature_c <= 100 }}"
+                  value_template: "{{ source_valid | bool }}"
               sequence:
                 - action: number.set_value
                   target:
