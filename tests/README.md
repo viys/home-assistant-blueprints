@@ -141,7 +141,8 @@ values, command ordering, error behavior, and skipped writes.
 ## Validation scope
 
 TRV-ZBL multi-source tests cover five independent ZHA slots, unit conversion,
-the firmware's -30 to 100 °C range, startup/reload/enable synchronization,
+forwarding numeric readings outside -30 to 100 °C (including -60 °C) without
+blueprint range filtering, startup/reload/enable synchronization,
 empty/invalid/duplicate/self-source removal, recovery, service-error isolation,
 and Zigbee2MQTT's source-1-only fallback. The blueprint targets Home Assistant
 2025.10 or newer and requires a ZHA handler mapping `0xFF11`–`0xFF15` to

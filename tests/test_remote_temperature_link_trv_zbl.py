@@ -58,7 +58,7 @@ class ZblSourcesTests(unittest.TestCase):
         """Bad readings clear only their own slot and a fresh value rebinds it."""
         for i in range(1, 6):
             for value, unit in (("unavailable", "°C"), ("unknown", "°C"), ("NaN", "°C"),
-                                ("inf", "°C"), ("20", "bad"), ("100.01", "°C"), ("-30.01", "°C")):
+                                ("inf", "°C"), ("20", "bad")):
                 run = sources()
                 entity = f"sensor.source{i}"
                 new = run.set_state(entity, value, unit)
@@ -83,14 +83,44 @@ class ZblSourcesTests(unittest.TestCase):
         run.fire("ha_started")
         self.assertEqual([c["data"]["value"] for c in run.calls], [2000, -32768, -32768, -32768, 2400])
 
-    def test_boundaries_and_negative_rounding(self):
-        """Enforce the firmware's usable range after unit conversion."""
+    def test_conversion_and_negative_rounding(self):
+        """Preserve unit conversion and centidegree rounding."""
         for value, unit, expected in (("-30", "°C", -3000), ("212", "°F", 10000),
                                       ("243.15", "K", -3000), ("-5.126", "°C", -513)):
             run = sources()
             new = run.set_state("sensor.source5", value, unit)
             run.dispatch_state("sensor.source5", None, new)
             self.assertEqual(run.calls[0]["data"]["value"], expected)
+
+    def test_numeric_readings_are_forwarded_without_temperature_range_filter(self):
+        """Forward abnormal numeric readings for the device to validate locally."""
+        samples = (("-40", "°C", -40), ("-60", "°C", -60),
+                   ("-76", "°F", -60), ("213.15", "K", -60),
+                   ("-30.01", "°C", -30.01), ("100.01", "°C", 100.01))
+        for integration in ("zha", "mqtt"):
+            for i in (range(1, 6) if integration == "zha" else (1,)):
+                for value, unit, celsius in samples:
+                    with self.subTest(integration=integration, source=i, value=value, unit=unit):
+                        run = sources(integration)
+                        entity = f"sensor.source{i}"
+                        new = run.set_state(entity, value, unit)
+                        run.dispatch_state(entity, None, new)
+                        if integration == "zha":
+                            self.assertEqual(run.calls, [{
+                                "action": "zha.set_zigbee_cluster_attribute",
+                                "continue_on_error": True,
+                                "data": dict(ieee="00:11", endpoint_id=1, cluster_id=0xFC11,
+                                             cluster_type="in", attribute=0xFF10 + i,
+                                             value=round(celsius * 100)),
+                            }])
+                        else:
+                            self.assertEqual(len(run.calls), 1)
+                            call = run.calls[0]
+                            self.assertEqual(call["action"], "number.set_value")
+                            self.assertEqual(call["target"],
+                                             {"entity_id": "number.target_external_temperature_input"})
+                            self.assertEqual(set(call["data"]), {"value"})
+                            self.assertAlmostEqual(call["data"]["value"], celsius)
 
     def test_disabled_unrelated_and_wrong_devices_skip(self):
         """Only compatible enabled targets and relevant events may write."""
