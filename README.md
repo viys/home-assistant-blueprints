@@ -6,6 +6,13 @@ This README lists the available blueprints and explains how to import or update 
 
 For official import and re-import instructions, see [Using automation blueprints](https://www.home-assistant.io/docs/automation/using_blueprints/).
 
+## Before importing a blueprint
+
+Use the latest compatible ZHA quirk or Zigbee2MQTT (Z2M) converter for your SONOFF device. Search for your device model in the GitHub pull requests for the integration you use.
+
+- [ZHA quirks — GitHub pull requests](https://github.com/zigpy/zha-device-handlers/pulls)
+- [Zigbee2MQTT converters — GitHub pull requests](https://github.com/Koenkk/zigbee-herdsman-converters/pulls)
+
 ## Import a blueprint
 
 ### Option 1: Open the import dialog in Home Assistant
