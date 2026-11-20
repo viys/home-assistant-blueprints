@@ -145,7 +145,7 @@ class MultiSourceTests(unittest.TestCase):
             self.assertEqual(run.calls[0]["data"]["value"], 2000)
 
     def test_mqtt_sends_only_source_one_updates(self):
-        """MQTT has no multi-slot or startup/full-sync behavior in this blueprint."""
+        """Legacy MQTT converters retain source-one-only update behavior."""
         # Source 2/3 events and startup/reload must not generate stray MQTT writes.
         for value, unit in (("20", "°C"), ("68", "°F"), ("293.15", "K")):
             run = sources("mqtt")
@@ -197,6 +197,116 @@ class MultiSourceTests(unittest.TestCase):
         run.fail.clear()
         run.fire("source_changed", entity="sensor.source2", new_state=run.states["sensor.source2"])
         self.assertEqual(run.calls[-1]["data"]["attribute"], 0xFF12)
+
+
+def mqtt_sources(extras=True):
+    """Model the three numbered inputs exposed by the supplied Z2M converter."""
+    # Multi-source converters replace the legacy number and temperature select.
+    run = sources("mqtt", version="1.0.6", extras=extras)
+    run.entity_map["target"] = []
+    for index in (1, 2, 3):
+        number = f"number.target_external_temperature_input_{index}"
+        select = f"select.target_external_temperature_input_{index}_state"
+        run.entity_map["target"].extend([number, select])
+        run.set_state(number, "20", "°C", min=0, max=99.9, step=0.1)
+        run.set_state(select, "unbound", options=["online", "offline", "unbound", "restored"])
+    return run
+
+
+class MqttMultiSourceTests(unittest.TestCase):
+    """Exercise the numbered converter contract using the actual blueprint YAML."""
+
+    def test_each_source_update_converts_and_routes_independently(self):
+        """Only the changed slot receives a Celsius value at converter precision."""
+        # Setting a temperature defaults to online in the converter, without a second call.
+        for index in (1, 2, 3):
+            for value, unit in (("20.24", "°C"), ("68.432", "°F"), ("293.39", "K")):
+                with self.subTest(index=index, unit=unit):
+                    run = mqtt_sources()
+                    entity = f"sensor.source{index}"
+                    new = run.set_state(entity, value, unit)
+                    run.dispatch_state(entity, None, new)
+                    self.assertEqual(run.calls, [dict(action="number.set_value",
+                        target=dict(entity_id=f"number.target_external_temperature_input_{index}"),
+                        data=dict(value=20.2))])
+
+    def test_startup_and_reload_sync_all_sources(self):
+        """MQTT capability comes from numbered entities rather than ZHA version strings."""
+        # Z2M reports dotted firmware versions and needs no ZHA enum mode sensor.
+        for trigger in ("ha_started", "automation_reloaded"):
+            run = mqtt_sources()
+            run.fire(trigger)
+            self.assertEqual([(call["target"]["entity_id"], call["data"]) for call in run.calls],
+                [(f"number.target_external_temperature_input_{index}", dict(value=19 + index))
+                 for index in (1, 2, 3)])
+
+    def test_empty_optional_sources_unbind_on_full_sync(self):
+        """Unbinding uses the state selects rather than writing a numeric sentinel."""
+        # Source updates must not repeatedly clear the other slots.
+        for trigger in ("ha_started", "automation_reloaded"):
+            run = mqtt_sources(extras=False)
+            run.fire(trigger)
+            self.assertEqual(run.calls[0]["data"], dict(value=20))
+            self.assertEqual(run.calls[1:], [dict(action="select.select_option",
+                target=dict(entity_id=f"select.target_external_temperature_input_{index}_state"),
+                data=dict(option="unbound")) for index in (2, 3)])
+            run.calls.clear()
+            run.fire("source_changed", entity="sensor.source1", new_state=run.states["sensor.source1"])
+            self.assertEqual(len(run.calls), 1)
+
+    def test_invalid_source_is_skipped_without_blocking_peers(self):
+        """Bad readings never become online writes or unbind configured slots."""
+        # Include converter limits, nonfinite values, unsupported units and self sources.
+        for index in (1, 2, 3):
+            for value, unit in (("unavailable", "°C"), ("unknown", "°C"), ("nan", "°C"),
+                                ("inf", "°C"), ("20", "bad"), ("-0.1", "°C"),
+                                ("100", "°C"), ("31", "°F"), ("273", "K")):
+                with self.subTest(index=index, value=value, unit=unit):
+                    run = mqtt_sources()
+                    run.set_state(f"sensor.source{index}", value, unit)
+                    run.fire("ha_started")
+                    self.assertEqual([call["target"]["entity_id"] for call in run.calls],
+                        [f"number.target_external_temperature_input_{peer}" for peer in (1, 2, 3) if peer != index])
+            run = mqtt_sources()
+            run.entity_map["target"].append(f"sensor.source{index}")
+            run.fire("ha_started")
+            self.assertEqual(len(run.calls), 2)
+
+    def test_limits_and_recovery(self):
+        """Exact converter bounds and a recovered source are sent normally."""
+        # Fahrenheit and Kelvin limits are checked after conversion to Celsius.
+        for value, unit, expected in (("0", "°C", 0), ("99.9", "°C", 99.9),
+                                      ("32", "°F", 0), ("273.15", "K", 0)):
+            run = mqtt_sources()
+            run.set_state("sensor.source2", "unavailable")
+            run.fire("source_changed", entity="sensor.source2", new_state=run.states["sensor.source2"])
+            self.assertEqual(run.calls, [])
+            recovered = run.set_state("sensor.source2", value, unit)
+            run.dispatch_state("sensor.source2", None, recovered)
+            self.assertEqual(run.calls[0]["data"], dict(value=expected))
+
+    def test_missing_or_ambiguous_slot_entities_block_writes(self):
+        """Do not partially synchronize an incompletely discovered three-slot device."""
+        # Legacy entities are absent for the multi-source converter.
+        for index in (1, 2, 3):
+            for domain, suffix in (("number", ""), ("select", "_state")):
+                for ambiguous in (False, True):
+                    run = mqtt_sources()
+                    entity = f"{domain}.target_external_temperature_input_{index}{suffix}"
+                    if ambiguous:
+                        run.entity_map["target"].append(entity.replace(".target_", ".duplicate_"))
+                    else:
+                        run.entity_map["target"].remove(entity)
+                    run.fire("ha_started")
+                    self.assertEqual(run.calls, [])
+
+    def test_target_reports_and_unrelated_events_do_not_loop(self):
+        """Echoes of number/state writes cannot trigger further synchronization."""
+        # Only source inputs and startup/reload events authorize MQTT writes.
+        run = mqtt_sources()
+        for entity in run.entity_map["target"] + ["sensor.unrelated"]:
+            run.dispatch_state(entity, None, dict(state="online"))
+        self.assertEqual(run.calls, [])
 
 
 if __name__ == "__main__":
