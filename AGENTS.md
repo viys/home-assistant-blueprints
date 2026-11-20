@@ -17,7 +17,7 @@ Get-Content automation/sonoff/<blueprint>.yaml
 
 GitHub Actions runs blueprint validation and the test suite on Python 3.11–3.14
 for pushes and pull requests. Structural and behavior checks cover every current
-blueprint. See `tests/README.md` for scope and runtime limitations.
+blueprint.
 
 Each blueprint must have exactly one dedicated test file. For
 `automation/sonoff/<blueprint>.yaml`, use `tests/test_<blueprint>.py` with the
@@ -44,7 +44,7 @@ Describe only what the blueprint supports and does for the user. Do not leak imp
 
 ## Documentation and Link Integrity
 
-Keep `README.md` focused on the repository overview, common import/re-import instructions, and the blueprint catalogue. Put blueprint-specific requirements and supported behavior in that blueprint's metadata and input descriptions; track unresolved defects and implementation limitations in GitHub Issues. Keep test procedures and coverage details in `tests/README.md`. Do not add per-blueprint troubleshooting, pending-work lists, or issue status paragraphs to the root README.
+Keep `README.md` focused on the repository overview, common import/re-import instructions, and the blueprint catalogue. Put blueprint-specific requirements and supported behavior in that blueprint's metadata and input descriptions; track unresolved defects and implementation limitations in GitHub Issues. Do not maintain a separate project-level test README; describe test scenarios and limitations in the relevant test names and comments. Do not add per-blueprint troubleshooting, pending-work lists, or issue status paragraphs to the root README.
 
 Use the same short, action-oriented name in the README catalogue and in
 `blueprint.name`. Follow the existing action-and-device naming pattern. Do not
