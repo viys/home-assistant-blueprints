@@ -1,0 +1,170 @@
+blueprint:
+  name: Sync Average Temperature to TRVZB
+  author: Sonoff
+  description: >
+    Synchronizes the average of external temperature readings with a SONOFF
+    TRVZB thermostatic radiator valve connected through ZHA or Zigbee2MQTT.
+    The average is applied while external temperature mode is enabled, on source updates,
+    startup, automation reload, and every minute. Unavailable, invalid, and
+    expired sources are excluded. When all sources are excluded, synchronization
+    stops until a valid source returns. Temperature values in Celsius,
+    Fahrenheit, or Kelvin are automatically converted to Celsius.
+  domain: automation
+  homeassistant:
+    min_version: 2025.4.0
+  input:
+    target_device:
+      name: TRVZB device
+      description: Select the radiator valve and enable its external temperature mode. Use a compatible ZHA quirk or Zigbee2MQTT converter. Use only one temperature synchronization automation per radiator valve.
+      selector:
+        device:
+          filter:
+            - integration: zha
+              manufacturer: SONOFF
+              model: TRVZB
+            - integration: mqtt
+              manufacturer: SONOFF
+              model: Zigbee thermostatic radiator valve
+              model_id: TRVZB
+    source_entities:
+      name: External temperature sensors
+      description: Select one or more temperature sensors from other devices. Each distinct sensor has equal weight. The target radiator valve's own sensors are excluded. The average is sent using the integration's external temperature input and is subject to its supported temperature range.
+      selector:
+        entity:
+          multiple: true
+          filter:
+            domain: sensor
+            device_class: temperature
+    source_timeout:
+      name: Temperature validity period
+      description: Shared by all selected temperature sources. Exclude a source when its temperature state has not changed for this many minutes. Repeated identical readings and attribute updates do not extend validity. Home Assistant restarts may extend validity. Expiration is checked every minute.
+      default: 60
+      selector:
+        number:
+          min: 1
+          max: 120
+          step: 1
+          unit_of_measurement: min
+          mode: box
+
+variables:
+  target_device: !input target_device
+  source_entities: !input source_entities
+  source_timeout: !input source_timeout
+  target_integration: >
+    {% set ns = namespace(value='') %}
+    {% for identifier in (device_attr(target_device, 'identifiers') or []) %}
+      {% if identifier[0] in ['zha', 'mqtt'] %}
+        {% set ns.value = identifier[0] %}
+      {% endif %}
+    {% endfor %}
+    {{ ns.value }}
+  zha_external_temperature_sensor_switch: >
+    {{ (device_entities(target_device) or [])
+       | select('match', '^switch\\..*_external_temperature_sensor$')
+       | list
+       | first
+       | default('', true) }}
+  zha_external_temperature_sensor_value: >
+    {{ (device_entities(target_device) or [])
+       | select('match', '^number\\..*_external_temperature_sensor_value$')
+       | list
+       | first
+       | default('', true) }}
+  mqtt_temperature_sensor_select: >
+    {{ (device_entities(target_device) or [])
+       | select('match', '^select\\..*_temperature_sensor_select$')
+       | list
+       | first
+       | default('', true) }}
+  mqtt_external_temperature_input: >
+    {{ (device_entities(target_device) or [])
+       | select('match', '^number\\..*_external_temperature_input$')
+       | list
+       | first
+       | default('', true) }}
+
+triggers:
+  - trigger: state
+    id: source_changed
+    entity_id: !input source_entities
+  - trigger: time_pattern
+    id: periodic_sync
+    minutes: "/1"
+  - trigger: homeassistant
+    id: ha_started
+    event: start
+  - trigger: event
+    id: automation_reloaded
+    event_type: automation_reloaded
+  - trigger: event
+    id: target_mode_changed
+    event_type: state_changed
+
+conditions:
+  - condition: template
+    value_template: >
+      {{ trigger.id != 'target_mode_changed'
+         or trigger.event.data.entity_id in
+            [zha_external_temperature_sensor_switch, mqtt_temperature_sensor_select] }}
+  - condition: template
+    value_template: >
+      {{ device_attr(target_device, 'manufacturer') == 'SONOFF'
+         and ((target_integration | trim == 'zha'
+               and device_attr(target_device, 'model') == 'TRVZB'
+               and zha_external_temperature_sensor_value | trim != ''
+               and is_state(zha_external_temperature_sensor_switch, 'on'))
+              or (target_integration | trim == 'mqtt'
+                  and device_attr(target_device, 'model') == 'Zigbee thermostatic radiator valve'
+                  and mqtt_external_temperature_input | trim != ''
+                  and states(mqtt_temperature_sensor_select) in
+                      ['external', 'external_2', 'external_3',
+                       'remote_temperature', 'remote_source_offline'])) }}
+
+actions:
+  - variables:
+      valid_temperatures: >
+        {% set ns = namespace(values=[]) %}
+        {% set current_time = now() %}
+        {% for entity in source_entities | unique | list %}
+          {% set source = states[entity] %}
+          {% set unit = state_attr(entity, 'unit_of_measurement') %}
+          {% if source is not none
+                and entity not in (device_entities(target_device) or [])
+                and is_number(source.state)
+                and unit in ['°C', '°F', 'K']
+                and 0 <= (current_time - source.last_changed).total_seconds()
+                       < source_timeout | float * 60 %}
+            {% set value = source.state | float %}
+            {% set temperature = (value - 32) * 5 / 9 if unit == '°F'
+                                 else value - 273.15 if unit == 'K' else value %}
+            {% set ns.values = ns.values + [temperature] %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.values }}
+  # Do not refresh the device's remote temperature when every source has expired.
+  - condition: template
+    value_template: "{{ valid_temperatures | count > 0 }}"
+  - variables:
+      average_temperature: "{{ ((valid_temperatures | sum) / (valid_temperatures | count)) | round(1) }}"
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ target_integration | trim == 'zha' }}"
+        sequence:
+          - action: number.set_value
+            target:
+              entity_id: "{{ zha_external_temperature_sensor_value | trim }}"
+            data:
+              value: "{{ average_temperature }}"
+      - conditions:
+          - condition: template
+            value_template: "{{ target_integration | trim == 'mqtt' }}"
+        sequence:
+          - action: number.set_value
+            target:
+              entity_id: "{{ mqtt_external_temperature_input | trim }}"
+            data:
+              value: "{{ average_temperature }}"
+
+mode: restart
