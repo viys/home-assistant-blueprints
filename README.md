@@ -38,7 +38,7 @@ If the updated blueprint changes its inputs, review and adjust any automations t
 Select a device to browse and import its blueprints.
 
 <details>
-<summary><strong>SNZB-02DR2</strong> &nbsp; <sub>Temperature &amp; humidity sensor</sub></summary>
+<summary><strong>SNZB-02DR2</strong></summary>
 
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
@@ -47,7 +47,7 @@ Select a device to browse and import its blueprints.
 </details>
 
 <details>
-<summary><strong>TP-WGZBA</strong> &nbsp; <sub>Thermostat panel</sub></summary>
+<summary><strong>TP-WGZBA</strong></summary>
 
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
@@ -59,7 +59,7 @@ Select a device to browse and import its blueprints.
 </details>
 
 <details>
-<summary><strong>TRV-ZBL</strong> &nbsp; <sub>Radiator valve</sub></summary>
+<summary><strong>TRV-ZBL</strong></summary>
 
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
@@ -68,7 +68,7 @@ Select a device to browse and import its blueprints.
 </details>
 
 <details>
-<summary><strong>TRV-ZBT</strong> &nbsp; <sub>Radiator valve</sub></summary>
+<summary><strong>TRV-ZBT</strong></summary>
 
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
@@ -77,7 +77,7 @@ Select a device to browse and import its blueprints.
 </details>
 
 <details>
-<summary><strong>TRVZB</strong> &nbsp; <sub>Radiator valve</sub></summary>
+<summary><strong>TRVZB</strong></summary>
 
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
