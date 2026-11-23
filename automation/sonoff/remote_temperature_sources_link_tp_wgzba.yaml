@@ -4,12 +4,17 @@ blueprint:
   description: >
     Synchronizes external temperature readings with a SONOFF TP-WGZBA
     thermostat through ZHA or Zigbee2MQTT. ZHA supports up to three sources on
-    newer firmware and source 1 on older firmware; Zigbee2MQTT uses source 1.
+    newer firmware and source 1 on older firmware. Zigbee2MQTT supports up to
+    three sources with a compatible converter and source 1 with older converters.
     ZHA synchronization runs while the external temperature sensor is enabled
-    and resumes when it is turned on. Zigbee2MQTT synchronizes on source 1
-    updates. Temperature values in Celsius, Fahrenheit, or Kelvin are
-    automatically converted to Celsius.
+    and resumes when it is turned on. Zigbee2MQTT synchronizes each source
+    on updates, and synchronizes all three sources on startup or automation
+    reload with a compatible converter. Empty optional sources are unbound.
+    Temperature values in Celsius, Fahrenheit, or Kelvin are automatically
+    converted to Celsius.
   domain: automation
+  homeassistant:
+    min_version: 2025.4.0
   input:
     target_device:
       name: TP-WGZBA device
@@ -26,7 +31,7 @@ blueprint:
               model_id: TP-WGZBA
     source_entity_1:
       name: Remote temperature source 1
-      description: Required. Select a temperature sensor from another device.
+      description: Required. Select a temperature sensor from another device. Zigbee2MQTT accepts 0 to 99.9 °C after unit conversion.
       selector:
         entity:
           filter:
@@ -34,7 +39,7 @@ blueprint:
               device_class: temperature
     source_entity_2:
       name: Remote temperature source 2 (optional)
-      description: ZHA only. Leave empty when a second remote source is not used.
+      description: Requires multi-source firmware and a compatible ZHA quirk or Zigbee2MQTT converter. Leave empty to unbind the second source. Zigbee2MQTT accepts 0 to 99.9 °C.
       default: ""
       selector:
         entity:
@@ -43,7 +48,7 @@ blueprint:
               device_class: temperature
     source_entity_3:
       name: Remote temperature source 3 (optional)
-      description: ZHA only. Leave empty when a third remote source is not used.
+      description: Requires multi-source firmware and a compatible ZHA quirk or Zigbee2MQTT converter. Leave empty to unbind the third source. Zigbee2MQTT accepts 0 to 99.9 °C.
       default: ""
       selector:
         entity:
@@ -91,6 +96,20 @@ variables:
        | list
        | first
        | default('', true) }}
+  mqtt_remote_slots: >
+    {%- set ns = namespace(slots=[]) -%}
+    {%- for index in range(1, 4) -%}
+      {%- set numbers = (device_entities(target_device) or [])
+          | select('match', '^number\\..*_external_temperature_input_' ~ index ~ '$') | list -%}
+      {%- set selects = (device_entities(target_device) or [])
+          | select('match', '^select\\..*_external_temperature_input_' ~ index ~ '_state$') | list -%}
+      {%- if numbers | count == 1 and selects | count == 1 -%}
+        {%- set ns.slots = ns.slots + [dict(source=source_entities[index - 1],
+            number=numbers[0], state=selects[0], index=index)] -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {{- ns.slots -}}
+  mqtt_supports_multi_remote_temperature: "{{ mqtt_remote_slots | count == 3 }}"
   full_sync: >
     {{ trigger.id in ['ha_started', 'automation_reloaded']
        or (trigger.id == 'source_changed'
@@ -173,8 +192,9 @@ conditions:
                and is_state(zha_temperature_source_mode, 'external_sensor'))
               or (target_integration | trim == 'mqtt'
                   and device_attr(target_device, 'model') == 'Zigbee thermostat panel'
-                  and mqtt_external_temperature_input | trim != ''
-                  and mqtt_temperature_sensor_select | trim != '')) }}
+                  and (mqtt_supports_multi_remote_temperature | bool
+                       or (mqtt_external_temperature_input | trim != ''
+                           and mqtt_temperature_sensor_select | trim != '')))) }}
 
 actions:
   - choose:
@@ -270,8 +290,52 @@ actions:
 
       - conditions:
           - condition: template
+            value_template: "{{ target_integration | trim == 'mqtt' and mqtt_supports_multi_remote_temperature | bool }}"
+        sequence:
+          - repeat:
+              for_each: "{{ mqtt_remote_slots }}"
+              sequence:
+                - variables:
+                    source: "{{ repeat.item.source }}"
+                    source_valid: "{{ [source_1_valid, source_2_valid, source_3_valid][repeat.item.index - 1] }}"
+                - choose:
+                    - conditions:
+                        - condition: template
+                          value_template: >
+                            {{ full_sync | bool and source == '' and repeat.item.index > 1 }}
+                      sequence:
+                        - action: select.select_option
+                          target:
+                            entity_id: "{{ repeat.item.state }}"
+                          data:
+                            option: unbound
+                    - conditions:
+                        - condition: template
+                          value_template: >
+                            {{ source_valid | bool
+                               and (full_sync | bool or trigger.event.data.entity_id == source) }}
+                      sequence:
+                        - variables:
+                            temperature_c: >
+                              {% set temperature = states(source) | float %}
+                              {% set unit = state_attr(source, 'unit_of_measurement') %}
+                              {{ (temperature - 32) * 5 / 9 if unit == '°F'
+                                 else temperature - 273.15 if unit == 'K'
+                                 else temperature }}
+                        - condition: template
+                          value_template: "{{ 0 <= temperature_c | float <= 99.9 }}"
+                        # The converter defaults this slot to online when a temperature is set.
+                        - action: number.set_value
+                          target:
+                            entity_id: "{{ repeat.item.number }}"
+                          data:
+                            value: "{{ temperature_c | float | round(1) }}"
+
+      - conditions:
+          - condition: template
             value_template: >
               {{ target_integration | trim == 'mqtt'
+                 and not (mqtt_supports_multi_remote_temperature | bool)
                  and source_1_valid | bool
                  and trigger.id == 'source_changed'
                  and trigger.event.data.entity_id == source_entity_1 }}

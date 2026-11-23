@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" viewBox="0 0 760 508" role="img" aria-labelledby="title desc">
+  <title id="title">Keep each room temperature separate</title>
+  <desc id="desc">Three illustrative readings, 20, 22 and 21 degrees Celsius, pass separately through Home Assistant into TP-WGZBA remote inputs 1, 2 and 3. Home Assistant does not calculate an average. Source 1 is required; sources 2 and 3 are optional and unused optional inputs are unbound with multi-source support. Compatible firmware and integration support are required for all three inputs; older support uses source 1. The input list is schematic, not the physical display.</desc>
+  <style>text { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif; }</style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L8 4 L0 8 L2 4 Z" fill="#1abcf2"/>
+    </marker>
+  </defs>
+  <rect width="760" height="508" fill="white"/>
+  <!-- Shared header; functional layouts below vary by blueprint behavior. -->
+  <text x="380" y="40" font-size="22" fill="#183642" font-weight="600" text-anchor="middle">Keep each room temperature separate</text>
+<text x="380" y="66" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">TP-WGZBA · ZHA or Zigbee2MQTT · Up to three sources</text>
+
+  <rect x="275" y="105" width="180" height="275" rx="16" fill="#edf9fe" stroke="none" />
+<rect x="495" y="105" width="240" height="275" rx="16" fill="white" stroke="#96b8c8" />
+<text x="365" y="134" font-size="16" fill="#183642" font-weight="600" text-anchor="middle">Home Assistant</text>
+<text x="615" y="134" font-size="16" fill="#183642" font-weight="600" text-anchor="middle">TP-WGZBA</text>
+<text x="615" y="158" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">Separate remote inputs</text>
+<text x="45" y="160" font-size="12" fill="#526b76" font-weight="600" text-anchor="start">SOURCE 1 · required</text>
+<text x="160" y="199" font-size="28" fill="#007fa8" font-weight="600" text-anchor="middle">20 °C</text>
+<path d="M225 190 L264 190" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M300 190 L430 190" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M460 190 L484 190" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="550" y="195" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Input 1</text>
+<text x="668" y="197" font-size="23" fill="#007fa8" font-weight="600" text-anchor="middle">20 °C</text>
+<text x="45" y="231" font-size="12" fill="#526b76" font-weight="600" text-anchor="start">SOURCE 2 · optional</text>
+<text x="160" y="270" font-size="28" fill="#007fa8" font-weight="600" text-anchor="middle">22 °C</text>
+<path d="M225 261 L264 261" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M300 261 L430 261" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M460 261 L484 261" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="550" y="266" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Input 2</text>
+<text x="668" y="268" font-size="23" fill="#007fa8" font-weight="600" text-anchor="middle">22 °C</text>
+<text x="45" y="302" font-size="12" fill="#526b76" font-weight="600" text-anchor="start">SOURCE 3 · optional</text>
+<text x="160" y="341" font-size="28" fill="#007fa8" font-weight="600" text-anchor="middle">21 °C</text>
+<path d="M225 332 L264 332" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M300 332 L430 332" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M460 332 L484 332" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="550" y="337" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Input 3</text>
+<text x="668" y="339" font-size="23" fill="#007fa8" font-weight="600" text-anchor="middle">21 °C</text>
+<text x="365" y="405" font-size="13" fill="#007fa8" font-weight="600" text-anchor="middle">Forward individually</text>
+<path d="M25 431 L735 431" fill="none" stroke="#dce8ee" stroke-width="1.5"/>
+<text x="380" y="459" font-size="14" fill="#183642" font-weight="600" text-anchor="middle">Home Assistant forwards each reading without averaging.</text>
+<text x="380" y="483" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">Multi-source support required; older support uses source 1. Enable external mode.</text>
+</svg>

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" viewBox="0 0 760 496" role="img" aria-labelledby="title desc">
+  <title id="title">Supply a remote temperature and humidity</title>
+  <desc id="desc">An external temperature source is required in the form; an external humidity source is optional. Home Assistant validates and sends each independently into the selected SNZB-02DR2 remote slot, illustrated with 21 degrees Celsius and 45 percent. An invalid source does not block the other valid source. Create one automation per populated slot. The slot list is schematic and does not show or select the physical display.</desc>
+  <style>text { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif; }</style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L8 4 L0 8 L2 4 Z" fill="#1abcf2"/>
+    </marker>
+  </defs>
+  <rect width="760" height="496" fill="white"/>
+  <!-- Shared header; functional layouts below vary by blueprint behavior. -->
+  <text x="380" y="40" font-size="22" fill="#183642" font-weight="600" text-anchor="middle">Supply a remote temperature and humidity</text>
+<text x="380" y="66" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">SNZB-02DR2 · ZHA or Zigbee2MQTT · One automation per remote slot</text>
+
+  <rect x="275" y="105" width="180" height="259" rx="16" fill="#edf9fe" stroke="none" />
+<rect x="495" y="105" width="240" height="259" rx="16" fill="white" stroke="#96b8c8" />
+<text x="365" y="137" font-size="16" fill="#183642" font-weight="600" text-anchor="middle">Home Assistant</text>
+<text x="615" y="137" font-size="16" fill="#183642" font-weight="600" text-anchor="middle">SNZB-02DR2</text>
+<text x="615" y="163" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Selected remote slot</text>
+<text x="145" y="186" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Temperature · required</text>
+<text x="145" y="222" font-size="32" fill="#007fa8" font-weight="600" text-anchor="middle">21 °C</text>
+<path d="M225 211 L264 211" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="365" y="216" font-size="14" fill="#007fa8" font-weight="400" text-anchor="middle">Validate &amp; send</text>
+<path d="M460 211 L484 211" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="615" y="221" font-size="30" fill="#007fa8" font-weight="600" text-anchor="middle">21 °C</text>
+<text x="145" y="285" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Humidity · optional</text>
+<text x="145" y="321" font-size="32" fill="#007fa8" font-weight="600" text-anchor="middle">45%</text>
+<path d="M225 310 L264 310" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="365" y="315" font-size="14" fill="#007fa8" font-weight="400" text-anchor="middle">Validate &amp; send</text>
+<path d="M460 310 L484 310" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="615" y="320" font-size="30" fill="#007fa8" font-weight="600" text-anchor="middle">45%</text>
+<text x="365" y="392" font-size="14" fill="#007fa8" font-weight="600" text-anchor="middle">Independent updates</text>
+<path d="M25 419 L735 419" fill="none" stroke="#dce8ee" stroke-width="1.5"/>
+<text x="380" y="447" font-size="14" fill="#183642" font-weight="600" text-anchor="middle">A valid temperature or humidity update can be sent on its own.</text>
+<text x="380" y="471" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">Supplying readings does not choose the display or configure relay rules.</text>
+</svg>

@@ -1,0 +1,198 @@
+blueprint:
+  name: Sync Average Temperature to TP-WGZBA
+  author: Sonoff
+  description: >
+    Synchronizes the average of external temperature readings with a SONOFF
+    TP-WGZBA thermostat connected through ZHA or Zigbee2MQTT. The average is
+    applied while external temperature mode is enabled, on source updates,
+    startup, automation reload, and every minute. Unavailable, invalid, and
+    expired sources are excluded. When all sources are excluded, synchronization
+    stops until a valid source returns. Temperature values in Celsius,
+    Fahrenheit, or Kelvin are automatically converted to Celsius.
+  domain: automation
+  homeassistant:
+    min_version: 2025.4.0
+  input:
+    target_device:
+      name: TP-WGZBA device
+      description: Select the thermostat and enable its external temperature mode. Use a compatible ZHA quirk or Zigbee2MQTT converter. Use only one temperature synchronization automation per thermostat.
+      selector:
+        device:
+          filter:
+            - integration: zha
+              manufacturer: SONOFF
+              model: TP-WGZBA
+            - integration: mqtt
+              manufacturer: SONOFF
+              model: Zigbee thermostat panel
+              model_id: TP-WGZBA
+    source_timeout:
+      name: Temperature validity period
+      description: Shared by all selected temperature sources. Exclude a source when its temperature state has not changed for this many minutes. Repeated identical readings and attribute updates do not extend validity. Home Assistant restarts may extend validity. Expiration is checked every minute.
+      default: 60
+      selector:
+        number:
+          min: 1
+          max: 120
+          step: 1
+          unit_of_measurement: min
+          mode: box
+    source_entities:
+      name: External temperature sensors
+      description: Select one or more temperature sensors from other devices. Each distinct sensor has equal weight. The target thermostat's own sensors are excluded. The average is sent using the integration's external temperature input and is subject to its supported temperature range.
+      selector:
+        entity:
+          multiple: true
+          filter:
+            domain: sensor
+            device_class: temperature
+
+variables:
+  target_device: !input target_device
+  source_entities: !input source_entities
+  source_timeout: !input source_timeout
+  target_integration: >
+    {% set ns = namespace(value='') %}
+    {% for identifier in (device_attr(target_device, 'identifiers') or []) %}
+      {% if identifier[0] in ['zha', 'mqtt'] %}
+        {% set ns.value = identifier[0] %}
+      {% endif %}
+    {% endfor %}
+    {{ ns.value }}
+  target_ieee: >
+    {%- for identifier in (device_attr(target_device, 'identifiers') or []) -%}
+      {%- if identifier[0] == 'zha' -%}
+        {{ identifier[1] }}
+      {%- endif -%}
+    {%- endfor %}
+  zha_temperature_source_mode: >
+    {% set ns = namespace(entities=[]) %}
+    {% for entity in device_entities(target_device) or [] %}
+      {% if entity.startswith('sensor.')
+            and state_attr(entity, 'device_class') == 'enum'
+            and states(entity) in ['internal_sensor', 'external_sensor'] %}
+        {% set ns.entities = ns.entities + [entity] %}
+      {% endif %}
+    {% endfor %}
+    {{ ns.entities[0] if ns.entities | count == 1 else '' }}
+  mqtt_temperature_sensor_select: >
+    {{ (device_entities(target_device) or [])
+       | select('match', '^select\\..*_temperature_sensor_select$')
+       | list | first | default('', true) }}
+  mqtt_external_temperature_input: >
+    {{ (device_entities(target_device) or [])
+       | select('match', '^number\\..*_external_temperature_input$')
+       | list | first | default('', true) }}
+
+triggers:
+  - trigger: state
+    id: source_changed
+    entity_id: !input source_entities
+  - trigger: time_pattern
+    id: periodic_sync
+    minutes: "/1"
+  - trigger: homeassistant
+    id: ha_started
+    event: start
+  - trigger: event
+    id: automation_reloaded
+    event_type: automation_reloaded
+  - trigger: event
+    id: target_mode_changed
+    event_type: state_changed
+
+conditions:
+  - condition: template
+    value_template: >
+      {{ trigger.id != 'target_mode_changed'
+         or trigger.event.data.entity_id in
+            [zha_temperature_source_mode, mqtt_temperature_sensor_select] }}
+  - condition: template
+    value_template: >
+      {{ device_attr(target_device, 'manufacturer') == 'SONOFF'
+         and ((target_integration | trim == 'zha'
+               and device_attr(target_device, 'model') == 'TP-WGZBA'
+               and target_ieee | trim != ''
+               and is_state(zha_temperature_source_mode, 'external_sensor'))
+              or (target_integration | trim == 'mqtt'
+                  and device_attr(target_device, 'model') == 'Zigbee thermostat panel'
+                  and mqtt_external_temperature_input | trim != ''
+                  and states(mqtt_temperature_sensor_select) in
+                      ['external', 'remote_temperature', 'remote_source_offline'])) }}
+
+actions:
+  - variables:
+      valid_sources: >
+        {% set ns = namespace(values=[]) %}
+        {% set current_time = now() %}
+        {% for entity in source_entities | unique | list %}
+          {% set source = states[entity] %}
+          {% set unit = state_attr(entity, 'unit_of_measurement') %}
+          {% if source is not none
+                and entity not in (device_entities(target_device) or [])
+                and is_number(source.state)
+                and unit in ['°C', '°F', 'K']
+                and 0 <= (current_time - source.last_changed).total_seconds()
+                       < source_timeout | float * 60 %}
+            {% set value = source.state | float %}
+            {% set temperature = (value - 32) * 5 / 9 if unit == '°F'
+                                 else value - 273.15 if unit == 'K' else value %}
+            {% set ns.values = ns.values + [dict(temperature=temperature,
+                expires=source.last_changed.timestamp() + source_timeout | float * 60)] %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.values }}
+  # Do not refresh the device's remote temperature when every source has expired.
+  - condition: template
+    value_template: "{{ valid_sources | count > 0 }}"
+  - variables:
+      valid_temperatures: "{{ valid_sources | map(attribute='temperature') | list }}"
+      average_temperature: "{{ (valid_temperatures | sum) / (valid_temperatures | count) }}"
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ target_integration | trim == 'zha' }}"
+        sequence:
+          # The legacy input is encoded as T01, including on multi-source firmware.
+          - action: zha.set_zigbee_cluster_attribute
+            data:
+              ieee: "{{ target_ieee | trim }}"
+              endpoint_id: 1
+              cluster_id: 0xFC11
+              cluster_type: in
+              attribute: 0x7009
+              value: "{{ (average_temperature | float * 100) | round(0) | int }}"
+      - conditions:
+          - condition: template
+            value_template: "{{ target_integration | trim == 'mqtt' }}"
+        sequence:
+          - action: number.set_value
+            target:
+              entity_id: "{{ mqtt_external_temperature_input | trim }}"
+            data:
+              value: "{{ average_temperature | float | round(1) }}"
+          # Refresh the cached value before restoring an offline single source.
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ is_state(mqtt_temperature_sensor_select, 'remote_source_offline') }}"
+                sequence:
+                  # MQTT publish completion alone does not confirm the converter cache.
+                  - wait_template: >
+                      {{ is_number(states(mqtt_external_temperature_input))
+                         and states(mqtt_external_temperature_input) | float
+                             == average_temperature | float | round(1) }}
+                    timeout: "00:00:10"
+                    continue_on_timeout: false
+                  # A contributor can expire while the acknowledgement is pending.
+                  - condition: template
+                    value_template: >
+                      {{ is_state(mqtt_temperature_sensor_select, 'remote_source_offline')
+                         and now().timestamp() < valid_sources | map(attribute='expires') | min }}
+                  - action: select.select_option
+                    target:
+                      entity_id: "{{ mqtt_temperature_sensor_select | trim }}"
+                    data:
+                      option: remote_temperature
+
+mode: restart

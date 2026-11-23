@@ -1,0 +1,39 @@
+---
+import SocialIcons from '@astrojs/starlight/components/SocialIcons.astro';
+import sonoffIcon from '../../public/sonoff-favicon.png';
+---
+
+<span class="github-link"><SocialIcons /></span>
+<a class="sonoff-link" href="https://sonoff.tech/" aria-label="SONOFF official website" title="SONOFF official website">
+  <img src={sonoffIcon.src} width="18" height="18" alt="" />
+</a>
+
+<style>
+  .github-link {
+    display: inline-flex;
+  }
+
+  .github-link :global(a) {
+    color: #000000;
+  }
+
+  .sonoff-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5em;
+    margin: -0.5em;
+  }
+
+  .sonoff-link:hover {
+    opacity: 0.8;
+  }
+
+  /* Match Starlight's 1em social icons and crop the official favicon to a circle. */
+  .sonoff-link img {
+    display: block;
+    width: 1em;
+    height: 1em;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+</style>

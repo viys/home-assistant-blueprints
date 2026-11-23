@@ -96,7 +96,11 @@ class BlueprintRunner:
         self.clock += timedelta(microseconds=1)
         if unit is not None:
             attributes['unit_of_measurement'] = unit
-        self.states[entity] = dict(state=str(value), attributes=attributes, last_updated=self.clock)
+        previous = self.states[entity]
+        last_changed = (previous['last_changed'] if previous and previous['state'] == str(value)
+                        else self.clock)
+        self.states[entity] = dict(state=str(value), attributes=attributes,
+                                   last_updated=self.clock, last_changed=last_changed)
         return self.states[entity]
 
     def fire(self, trigger_id, entity=None, old_state=None, new_state=None):
@@ -107,6 +111,7 @@ class BlueprintRunner:
         if declaration['trigger'] == 'event':
             trigger['event'] = {'data': dict(entity_id=entity, old_state=old_state, new_state=new_state)}
         scope = dict(states=self.states, trigger=trigger, is_number=is_number,
+                     now=lambda: self.clock,
                      is_state=lambda entity, value: self.states(entity) == value,
                      state_attr=lambda entity, key: self.states[entity]['attributes'].get(key) if self.states[entity] else None,
                      device_entities=lambda device: self.entity_map.get(device, []),
@@ -202,6 +207,11 @@ class BlueprintRunner:
                 elif "condition" in action:
                     if not self.condition([action], scope):
                         return
+                elif "wait_template" in action:
+                    # Offline runs model an immediate acknowledgement or a full timeout.
+                    if not ha_bool(self.render(action["wait_template"], scope)):
+                        if not action.get("continue_on_timeout", True):
+                            return
                 elif "choose" in action:
                     for choice_index, choice in enumerate(action["choose"]):
                         if self.condition(choice["conditions"], scope):

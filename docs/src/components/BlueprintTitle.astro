@@ -1,0 +1,26 @@
+---
+import PageTitle from '@astrojs/starlight/components/PageTitle.astro';
+
+const { blueprint } = Astro.locals.starlightRoute.entry.data;
+const repository = 'https://github.com/viys/home-assistant-blueprints';
+const source = `${repository}/blob/master/automation/sonoff/${blueprint}.yaml`;
+const raw = 'https://raw.githubusercontent.com/viys/home-assistant-blueprints';
+---
+
+<PageTitle><slot /></PageTitle>
+{blueprint && (
+  <nav class="blueprint-actions" aria-label="Use this blueprint">
+    <a class="import-link" href={`https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=${encodeURIComponent(source)}`}>
+      Import blueprint
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" /></svg>
+    </a>
+    <details class="blueprint-downloads">
+      <summary>Other download options</summary>
+      <ul>
+        <li><a href={`${raw}/master/automation/sonoff/${blueprint}.yaml`}>Raw YAML</a> — stable version for manual import</li>
+        <li><a href={source}>Source on GitHub</a> — read the stable blueprint</li>
+        <li><a href={`${raw}/dev/automation/sonoff/${blueprint}.yaml`}>Dev YAML</a> — development version for testing</li>
+      </ul>
+    </details>
+  </nav>
+)}

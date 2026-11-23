@@ -11,8 +11,8 @@ blueprint:
   domain: automation
 
   homeassistant:
-    # The drain loop needs assignments to persist across nested script scopes.
-    min_version: 2025.3.0
+    # model_id selectors require 2025.4; the drain loop also needs persistent nested assignments.
+    min_version: 2025.4.0
 
   input:
     target_device:

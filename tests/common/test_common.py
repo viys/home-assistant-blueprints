@@ -108,6 +108,19 @@ class BlueprintTests(unittest.TestCase):
                 if minimum is not None:
                     self.assertRegex(str(minimum), r"^\d{4}\.\d{1,2}\.\d+$")
 
+    def test_model_id_selectors_require_home_assistant_2025_4(self):
+        """Reject minimum versions older than the model_id selector feature."""
+        # HA Core 2025.4.0 added model_id to DEVICE_FILTER_SELECTOR_CONFIG_SCHEMA.
+        for path, document in self.documents.items():
+            blueprint = document["blueprint"]
+            if not any(isinstance(item, dict) and "model_id" in item
+                       for item in walk(blueprint["input"])):
+                continue
+            with self.subTest(blueprint=path.name):
+                minimum = blueprint.get("homeassistant", {}).get("min_version")
+                self.assertIsNotNone(minimum, "model_id requires an explicit minimum HA version")
+                self.assertGreaterEqual(tuple(map(int, str(minimum).split("."))), (2025, 4, 0))
+
     def test_each_blueprint_has_one_dedicated_test_file(self):
         """Require matching test names and catch stale or extra test modules."""
         expected = {f"test_{path.stem}.py" for path in self.documents}

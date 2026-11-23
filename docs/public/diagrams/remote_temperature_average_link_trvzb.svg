@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" viewBox="0 0 760 493" role="img" aria-labelledby="title desc">
+  <title id="title">Let several rooms contribute one temperature</title>
+  <desc id="desc">Example: Home Assistant calculates the equal-weight average of 20 and 22 degrees Celsius, then sends one 21 degree external reading to TRVZB. Unavailable, invalid, self-sourced and expired readings are excluded. One or more sources may be selected. The validity period defaults to 60 minutes since the state last changed, checked every minute; identical reports do not renew it. External mode is required.</desc>
+  <style>text { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif; }</style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L8 4 L0 8 L2 4 Z" fill="#1abcf2"/>
+    </marker>
+  </defs>
+  <rect width="760" height="493" fill="white"/>
+  <!-- Shared header; functional layouts below vary by blueprint behavior. -->
+  <text x="380" y="40" font-size="22" fill="#183642" font-weight="600" text-anchor="middle">Let several rooms contribute one temperature</text>
+<text x="380" y="66" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">TRVZB · ZHA or Zigbee2MQTT · Average calculated in Home Assistant</text>
+
+  <rect x="265" y="105" width="220" height="286" rx="18" fill="#edf9fe" stroke="none" />
+<text x="375" y="134" font-size="16" fill="#183642" font-weight="600" text-anchor="middle">Home Assistant</text>
+<path d="M205 167 C225 167 230 222 254 222" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M205 290 C225 290 230 252 254 252" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<!-- Sensor bounds: 50,121 to 200,213. -->
+<rect x="50" y="121" width="150" height="92" rx="16" fill="white" stroke="#b6d6e3" />
+<rect x="62" y="133" width="126" height="48" rx="7" fill="#edf9fe" stroke="none" />
+<text x="125" y="167" font-size="28" fill="#007fa8" font-weight="600" text-anchor="middle">20 °C</text>
+<circle cx="125" cy="197" r="3" fill="#1abcf2"/>
+<text x="125" y="236" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Room A</text>
+<!-- Sensor bounds: 50,244 to 200,336. -->
+<rect x="50" y="244" width="150" height="92" rx="16" fill="white" stroke="#b6d6e3" />
+<rect x="62" y="256" width="126" height="48" rx="7" fill="#edf9fe" stroke="none" />
+<text x="125" y="290" font-size="28" fill="#007fa8" font-weight="600" text-anchor="middle">22 °C</text>
+<circle cx="125" cy="320" r="3" fill="#1abcf2"/>
+<text x="125" y="359" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Room B</text>
+<text x="375" y="181" font-size="14" fill="#007fa8" font-weight="600" text-anchor="middle">Equal-weight average</text>
+<text x="375" y="223" font-size="20" fill="#007fa8" font-weight="400" text-anchor="middle">(20 + 22) ÷ 2</text>
+<text x="375" y="271" font-size="38" fill="#007fa8" font-weight="600" text-anchor="middle">21 °C</text>
+<text x="375" y="311" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Use valid sources only</text>
+<text x="375" y="336" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">Exclude invalid or expired</text>
+<text x="375" y="358" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">readings before averaging</text>
+<path d="M490 222 C514 222 516 209 540 209" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="630" y="113" font-size="15" fill="#183642" font-weight="600" text-anchor="middle">TRVZB</text>
+<path d="M490 252 C535 252 575 280 640 280" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="630" y="139" font-size="12" fill="#526b76" text-anchor="middle">External readings</text>
+<!-- Valve bounds: 535,164 to 635,276. -->
+<ellipse cx="585" cy="179" rx="34" ry="12" fill="#f1f7fa" stroke="#96b8c8"/>
+<rect x="551" y="179" width="68" height="76" rx="15" fill="white" stroke="#96b8c8" />
+<rect x="558" y="193" width="54" height="32" rx="6" fill="#edf9fe" stroke="none" />
+<text x="585" y="215" font-size="18" fill="#007fa8" font-weight="600" text-anchor="middle">21°</text>
+<path d="M567 235 v10 M579 235 v10 M591 235 v10 M603 235 v10" stroke="#b8d0db" stroke-width="2"/>
+<rect x="563" y="255" width="44" height="13" rx="3" fill="#edf3f6" stroke="#96b8c8" />
+<!-- Valve bounds: 635,235 to 735,347. -->
+<ellipse cx="685" cy="250" rx="34" ry="12" fill="#f1f7fa" stroke="#96b8c8"/>
+<rect x="651" y="250" width="68" height="76" rx="15" fill="white" stroke="#96b8c8" />
+<rect x="658" y="264" width="54" height="32" rx="6" fill="#edf9fe" stroke="none" />
+<text x="685" y="286" font-size="18" fill="#007fa8" font-weight="600" text-anchor="middle">21°</text>
+<path d="M667 306 v10 M679 306 v10 M691 306 v10 M703 306 v10" stroke="#b8d0db" stroke-width="2"/>
+<rect x="663" y="326" width="44" height="13" rx="3" fill="#edf3f6" stroke="#96b8c8" />
+<text x="635" y="389" font-size="14" fill="#526b76" font-weight="400" text-anchor="middle">One or more valves</text>
+<path d="M25 416 L735 416" fill="none" stroke="#dce8ee" stroke-width="1.5"/>
+<text x="380" y="444" font-size="14" fill="#183642" font-weight="600" text-anchor="middle">20 °C and 22 °C become one 21 °C external reading.</text>
+<text x="380" y="468" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">Enable external mode. If no valid source remains, updates stop until one returns.</text>
+</svg>
