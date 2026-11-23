@@ -35,14 +35,10 @@ If the updated blueprint changes its inputs, review and adjust any automations t
 
 ## SONOFF blueprints
 
-All SONOFF blueprints are under [`automation/sonoff`](automation/sonoff).
-
-**Import** and **Links** use the stable `master` branch. **Dev links** provides raw YAML links for the `dev` branch.
-
-Expand a device below to browse its blueprints.
+Select a device to browse and import its blueprints.
 
 <details>
-<summary><strong>SNZB-02DR2</strong></summary>
+<summary><strong>SNZB-02DR2</strong> &nbsp; <sub>Temperature &amp; humidity sensor</sub></summary>
 
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
@@ -50,10 +46,8 @@ Expand a device below to browse its blueprints.
 
 </details>
 
----
-
 <details>
-<summary><strong>TP-WGZBA</strong></summary>
+<summary><strong>TP-WGZBA</strong> &nbsp; <sub>Thermostat panel</sub></summary>
 
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
@@ -64,10 +58,8 @@ Expand a device below to browse its blueprints.
 
 </details>
 
----
-
 <details>
-<summary><strong>TRV-ZBL</strong></summary>
+<summary><strong>TRV-ZBL</strong> &nbsp; <sub>Radiator valve</sub></summary>
 
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
@@ -75,10 +67,8 @@ Expand a device below to browse its blueprints.
 
 </details>
 
----
-
 <details>
-<summary><strong>TRV-ZBT</strong></summary>
+<summary><strong>TRV-ZBT</strong> &nbsp; <sub>Radiator valve</sub></summary>
 
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
@@ -86,10 +76,8 @@ Expand a device below to browse its blueprints.
 
 </details>
 
----
-
 <details>
-<summary><strong>TRVZB</strong></summary>
+<summary><strong>TRVZB</strong> &nbsp; <sub>Radiator valve</sub></summary>
 
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
@@ -97,6 +85,8 @@ Expand a device below to browse its blueprints.
 | **Sync Average Temperature to TRVZB** | <a href="https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fviys%2Fhome-assistant-blueprints%2Fblob%2Fmaster%2Fautomation%2Fsonoff%2Fremote_temperature_average_link_trvzb.yaml"><img src="https://my.home-assistant.io/badges/blueprint_import.svg" alt="Import blueprint" height="28"></a> | [Raw YAML](https://raw.githubusercontent.com/viys/home-assistant-blueprints/master/automation/sonoff/remote_temperature_average_link_trvzb.yaml) | [Raw YAML](https://raw.githubusercontent.com/viys/home-assistant-blueprints/dev/automation/sonoff/remote_temperature_average_link_trvzb.yaml) |
 
 </details>
+
+Import buttons and Raw YAML links use `master`; Dev links use `dev`. Browse all files in [`automation/sonoff`](automation/sonoff).
 
 ## Notes
 
