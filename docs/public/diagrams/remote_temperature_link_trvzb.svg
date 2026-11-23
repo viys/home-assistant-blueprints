@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" viewBox="0 0 760 510" role="img" aria-labelledby="title desc">
+  <title id="title">Use a room sensor for your heating</title>
+  <desc id="desc">One external sensor supplies 21.5 degrees Celsius through Home Assistant to one or more TRVZB target. These are external temperature readings, not heating setpoints. Enable external mode. Fahrenheit and Kelvin readings are converted to Celsius.</desc>
+  <style>text { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif; }</style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L8 4 L0 8 L2 4 Z" fill="#1abcf2"/>
+    </marker>
+  </defs>
+  <rect width="760" height="510" fill="white"/>
+  <!-- Shared header; functional layouts below vary by blueprint behavior. -->
+  <text x="380" y="40" font-size="22" fill="#183642" font-weight="600" text-anchor="middle">Use a room sensor for your heating</text>
+<text x="380" y="66" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">TRVZB · ZHA or Zigbee2MQTT · One temperature source</text>
+
+  <text x="130" y="105" font-size="12" fill="#526b76" font-weight="600" text-anchor="middle">ROOM SENSOR</text>
+<text x="380" y="105" font-size="12" fill="#526b76" font-weight="600" text-anchor="middle">AUTOMATION</text>
+<text x="625" y="105" font-size="14" fill="#183642" font-weight="600" text-anchor="middle">TRVZB</text>
+<!-- Sensor bounds: 55,151 to 205,243. -->
+<rect x="55" y="151" width="150" height="92" rx="16" fill="white" stroke="#b6d6e3" />
+<rect x="67" y="163" width="126" height="48" rx="7" fill="#edf9fe" stroke="none" />
+<text x="130" y="197" font-size="28" fill="#007fa8" font-weight="600" text-anchor="middle">21.5 °C</text>
+<circle cx="130" cy="227" r="3" fill="#1abcf2"/>
+<text x="130" y="266" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Measure where you sit</text>
+<path d="M210 197 L335 197" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<circle cx="380" cy="197" r="34" fill="#edf9fe"/>
+<path d="M361 196 L380 180 L399 196 M367 192 V213 H393 V192 M376 213 V200 H384 V213" fill="none" stroke="#007fa8" stroke-width="2" stroke-linejoin="round"/>
+<text x="380" y="257" font-size="15" fill="#183642" font-weight="600" text-anchor="middle">Home Assistant</text>
+<text x="380" y="279" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Forward reading</text>
+<path d="M419 197 C475 197 479 145 544 145" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M419 197 C475 197 529 260 644 260" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<!-- Valve bounds: 550,115 to 650,227. -->
+<ellipse cx="600" cy="130" rx="34" ry="12" fill="#f1f7fa" stroke="#96b8c8"/>
+<rect x="566" y="130" width="68" height="76" rx="15" fill="white" stroke="#96b8c8" />
+<rect x="573" y="144" width="54" height="32" rx="6" fill="#edf9fe" stroke="none" />
+<text x="600" y="166" font-size="18" fill="#007fa8" font-weight="600" text-anchor="middle">21.5°</text>
+<path d="M582 186 v10 M594 186 v10 M606 186 v10 M618 186 v10" stroke="#b8d0db" stroke-width="2"/>
+<rect x="578" y="206" width="44" height="13" rx="3" fill="#edf3f6" stroke="#96b8c8" />
+<!-- Valve bounds: 650,230 to 750,342. -->
+<ellipse cx="700" cy="245" rx="34" ry="12" fill="#f1f7fa" stroke="#96b8c8"/>
+<rect x="666" y="245" width="68" height="76" rx="15" fill="white" stroke="#96b8c8" />
+<rect x="673" y="259" width="54" height="32" rx="6" fill="#edf9fe" stroke="none" />
+<text x="700" y="281" font-size="18" fill="#007fa8" font-weight="600" text-anchor="middle">21.5°</text>
+<path d="M682 301 v10 M694 301 v10 M706 301 v10 M718 301 v10" stroke="#b8d0db" stroke-width="2"/>
+<rect x="678" y="321" width="44" height="13" rx="3" fill="#edf3f6" stroke="#96b8c8" />
+<text x="620" y="405" font-size="14" fill="#007fa8" font-weight="600" text-anchor="middle">External readings · 1+ valves</text>
+<path d="M25 433 L735 433" fill="none" stroke="#dce8ee" stroke-width="1.5"/>
+<text x="380" y="461" font-size="14" fill="#183642" font-weight="600" text-anchor="middle">The same room reading reaches each selected target.</text>
+<text x="380" y="485" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">Enable external mode on every selected valve.</text>
+</svg>

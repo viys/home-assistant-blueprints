@@ -1,8 +1,8 @@
 # Home Assistant Blueprints
 
-Automation blueprints for SONOFF devices in Home Assistant.
+Automation blueprints for SONOFF devices in Home Assistant. Browse the catalogue below to import a blueprint, or read the [documentation](https://viys.github.io/home-assistant-blueprints/) for device requirements and setup examples.
 
-This README lists the available blueprints and explains how to import or update them. Check each blueprint's inputs for its requirements and [GitHub Issues](https://github.com/viys/home-assistant-blueprints/issues) for known problems.
+Check [GitHub Issues](https://github.com/viys/home-assistant-blueprints/issues) for known problems.
 
 For official import and re-import instructions, see [Using automation blueprints](https://www.home-assistant.io/docs/automation/using_blueprints/).
 

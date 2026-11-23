@@ -1,0 +1,46 @@
+---
+title: Choose a blueprint
+description: Find the right SONOFF automation for your room sensors and heating devices.
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+Use your room sensors with a SONOFF thermostat, radiator valve, or display.
+Choose your device, compare the available blueprints, and follow an illustrated
+guide from import to your first working automation.
+
+## Find your device
+
+<CardGrid>
+  <LinkCard title="TP-WGZBA" description="Sync a room temperature, an average, or separate sources. Link the panel setpoint to supported valves." href="./blueprints/tp-wgzba/" />
+  <LinkCard title="TRVZB" description="Send one room temperature or a calculated average to one or more radiator valves." href="./blueprints/trvzb/" />
+  <LinkCard title="TRV-ZBL" description="Send up to five temperature sources through ZHA, or one through Zigbee2MQTT." href="./blueprints/trv-zbl/" />
+  <LinkCard title="TRV-ZBT" description="Use one external reading, or send a calculated average to one or more valves." href="./blueprints/trv-zbt/" />
+  <LinkCard title="SNZB-02DR2" description="Supply temperature and optional humidity to either remote slot." href="./blueprints/snzb02dr2/" />
+</CardGrid>
+
+## Choose the behavior
+
+| You want to… | Look for… |
+| --- | --- |
+| Use a sensor placed away from the thermostat or radiator | **Remote temperature**: one measured reading is forwarded. |
+| Combine several sensors into one reading | **Average temperature**: Home Assistant averages valid readings. |
+| Keep several temperature sources separate | **Remote temperature sources**: individual readings go to supported device slots. |
+| Make valves follow the panel setting | **Target temperature**: the desired temperature is forwarded, rather than a measured reading. |
+
+Source counts and behavior depend on the device, firmware, and integration.
+Each guide explains its ZHA and Zigbee2MQTT support before you import.
+
+Before importing, check the chosen guide's minimum Home Assistant Core version
+and [device support](./getting-started/#check-device-support). Requirements
+vary by blueprint.
+
+## Your first automation
+
+1. [Check the prerequisites](./getting-started/#before-importing).
+2. Open your device guide and choose a blueprint.
+3. Import it, then **create and save an automation** with your devices and sources.
+4. Cause a real source update and check the result.
+
+Already using one? Read [Update a blueprint](./updating/).
+For setup and connection checks, see [Check your automation](./checking/).

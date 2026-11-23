@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" viewBox="0 0 760 510" role="img" aria-labelledby="title desc">
+  <title id="title">Set once on the panel, follow on the valves</title>
+  <desc id="desc">Changing the target temperature on a TP-WGZBA connected through ZHA or Zigbee2MQTT sends the same setpoint to one or more supported ZHA TRV-ZBL or TRV-ZBT valves. Example: a new panel target of 21 degrees becomes a 21 degree target on both valves. Forwarded range is 5 to 30 degrees Celsius. TRVZB and Zigbee2MQTT target valves are not supported. Measured room-temperature changes, startup and automation reload do not trigger a setpoint broadcast.</desc>
+  <style>text { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif; }</style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L8 4 L0 8 L2 4 Z" fill="#1abcf2"/>
+    </marker>
+  </defs>
+  <rect width="760" height="510" fill="white"/>
+  <!-- Shared header; functional layouts below vary by blueprint behavior. -->
+  <text x="380" y="40" font-size="22" fill="#183642" font-weight="600" text-anchor="middle">Set once on the panel, follow on the valves</text>
+<text x="380" y="66" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Target temperature linking · Forwarded setpoints: 5–30 °C</text>
+
+  <text x="135" y="109" font-size="15" fill="#183642" font-weight="600" text-anchor="middle">TP-WGZBA</text>
+<!-- Panel bounds: 55,144 to 215,270. -->
+<rect x="55" y="144" width="160" height="126" rx="15" fill="white" stroke="#96b8c8" />
+<rect x="69" y="158" width="132" height="75" rx="7" fill="#edf9fe" stroke="none" />
+<text x="135" y="182" font-size="12" fill="#007fa8" font-weight="400" text-anchor="middle">New target</text>
+<text x="135" y="218" font-size="32" fill="#007fa8" font-weight="600" text-anchor="middle">21 °C</text>
+<circle cx="135" cy="251" r="8" fill="white" stroke="#96b8c8"/>
+<text x="135" y="300" font-size="14" fill="#526b76" font-weight="400" text-anchor="middle">You change the setpoint</text>
+<text x="135" y="325" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">ZHA or Zigbee2MQTT</text>
+<path d="M220 207 L335 207" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<circle cx="380" cy="207" r="34" fill="#edf9fe"/>
+<path d="M361 206 L380 190 L399 206 M367 202 V223 H393 V202 M376 223 V210 H384 V223" fill="none" stroke="#007fa8" stroke-width="2" stroke-linejoin="round"/>
+<text x="380" y="267" font-size="15" fill="#183642" font-weight="600" text-anchor="middle">Home Assistant</text>
+<text x="380" y="289" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Forward new target</text>
+<path d="M419 207 C475 207 499 147 549 147" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M419 207 C475 207 529 277 649 277" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<!-- Valve bounds: 555,117 to 655,229. -->
+<ellipse cx="605" cy="132" rx="34" ry="12" fill="#f1f7fa" stroke="#96b8c8"/>
+<rect x="571" y="132" width="68" height="76" rx="15" fill="white" stroke="#96b8c8" />
+<rect x="578" y="146" width="54" height="32" rx="6" fill="#edf9fe" stroke="none" />
+<text x="605" y="168" font-size="18" fill="#007fa8" font-weight="600" text-anchor="middle">21°</text>
+<path d="M587 188 v10 M599 188 v10 M611 188 v10 M623 188 v10" stroke="#b8d0db" stroke-width="2"/>
+<rect x="583" y="208" width="44" height="13" rx="3" fill="#edf3f6" stroke="#96b8c8" />
+<text x="605" y="247" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">TRV-ZBL</text>
+<!-- Valve bounds: 655,247 to 755,359. -->
+<ellipse cx="705" cy="262" rx="34" ry="12" fill="#f1f7fa" stroke="#96b8c8"/>
+<rect x="671" y="262" width="68" height="76" rx="15" fill="white" stroke="#96b8c8" />
+<rect x="678" y="276" width="54" height="32" rx="6" fill="#edf9fe" stroke="none" />
+<text x="705" y="298" font-size="18" fill="#007fa8" font-weight="600" text-anchor="middle">21°</text>
+<path d="M687 318 v10 M699 318 v10 M711 318 v10 M723 318 v10" stroke="#b8d0db" stroke-width="2"/>
+<rect x="683" y="338" width="44" height="13" rx="3" fill="#edf3f6" stroke="#96b8c8" />
+<text x="705" y="377" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">TRV-ZBT</text>
+<text x="625" y="102" font-size="13" fill="#007fa8" font-weight="600" text-anchor="middle">ZHA TARGETS ONLY</text>
+<text x="625" y="406" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Target setpoints · 1+ valves</text>
+<path d="M25 433 L735 433" fill="none" stroke="#dce8ee" stroke-width="1.5"/>
+<text x="380" y="461" font-size="14" fill="#183642" font-weight="600" text-anchor="middle">A new 21 °C panel target becomes a 21 °C target on each valve.</text>
+<text x="380" y="485" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">Runs when the panel setpoint changes; measured temperature changes do not trigger it.</text>
+</svg>

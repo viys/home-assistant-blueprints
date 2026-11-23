@@ -9,6 +9,8 @@ blueprint:
     source is never changed by this blueprint. Temperature values in Celsius,
     Fahrenheit, or Kelvin are automatically converted to Celsius.
   domain: automation
+  homeassistant:
+    min_version: 2025.4.0
 
   input:
     target_device:

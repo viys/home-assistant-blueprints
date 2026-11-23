@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" viewBox="0 0 760 617" role="img" aria-labelledby="title desc">
+  <title id="title">Let the valve combine room readings</title>
+  <desc id="desc">Top lane: with compatible ZHA firmware and device support, one to five source readings pass separately through Home Assistant. A two-source example of 20 and 22 degrees is averaged by the TRV-ZBL valve to 21 degrees. Bottom lane: Zigbee2MQTT uses source 1 only and forwards its 20 degree reading. This blueprint does not calculate an average in Home Assistant. Enable external mode. The valve validates numeric temperature readings.</desc>
+  <style>text { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif; }</style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L8 4 L0 8 L2 4 Z" fill="#1abcf2"/>
+    </marker>
+  </defs>
+  <rect width="760" height="617" fill="white"/>
+  <!-- Shared header; functional layouts below vary by blueprint behavior. -->
+  <text x="380" y="40" font-size="22" fill="#183642" font-weight="600" text-anchor="middle">Let the valve combine room readings</text>
+<text x="380" y="66" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">TRV-ZBL · Averaging location and source count depend on integration</text>
+
+  <rect x="25" y="100" width="710" height="211" rx="16" fill="#f4fafe" stroke="none" />
+<rect x="25" y="336" width="710" height="179" rx="16" fill="#f7f9fa" stroke="none" />
+<text x="45" y="127" font-size="15" fill="#007fa8" font-weight="600" text-anchor="start">ZHA · 1–5 sources</text>
+<text x="45" y="364" font-size="15" fill="#007fa8" font-weight="600" text-anchor="start">Zigbee2MQTT · Source 1 only</text>
+<text x="135" y="177" font-size="18" fill="#007fa8" font-weight="600" text-anchor="middle">Room A: 20 °C</text>
+<text x="135" y="229" font-size="18" fill="#007fa8" font-weight="600" text-anchor="middle">Room B: 22 °C</text>
+<text x="135" y="280" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">Two-source example</text>
+<path d="M222 171 C247 171 257 204 286 204" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M222 223 C247 223 257 204 286 204" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<circle cx="331" cy="204" r="34" fill="#edf9fe"/>
+<path d="M312 203 L331 187 L350 203 M318 199 V220 H344 V199 M327 220 V207 H335 V220" fill="none" stroke="#007fa8" stroke-width="2" stroke-linejoin="round"/>
+<text x="331" y="264" font-size="15" fill="#183642" font-weight="600" text-anchor="middle">Home Assistant</text>
+<text x="331" y="286" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Forward separately</text>
+<path d="M370 204 L454 204" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="500" y="169" font-size="17" fill="#007fa8" font-weight="600" text-anchor="middle">20°</text>
+<text x="500" y="232" font-size="17" fill="#007fa8" font-weight="600" text-anchor="middle">22°</text>
+<path d="M532 169 C550 169 550 196 569 196" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M532 232 C550 232 550 211 569 211" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<!-- Valve bounds: 575,157 to 675,269. -->
+<ellipse cx="625" cy="172" rx="34" ry="12" fill="#f1f7fa" stroke="#96b8c8"/>
+<rect x="591" y="172" width="68" height="76" rx="15" fill="white" stroke="#96b8c8" />
+<rect x="598" y="186" width="54" height="32" rx="6" fill="#edf9fe" stroke="none" />
+<text x="625" y="208" font-size="18" fill="#007fa8" font-weight="600" text-anchor="middle">21°</text>
+<path d="M607 228 v10 M619 228 v10 M631 228 v10 M643 228 v10" stroke="#b8d0db" stroke-width="2"/>
+<rect x="603" y="248" width="44" height="13" rx="3" fill="#edf3f6" stroke="#96b8c8" />
+<text x="625" y="287" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">Valve averages</text>
+<text x="135" y="420" font-size="18" fill="#007fa8" font-weight="600" text-anchor="middle">Room A: 20 °C</text>
+<path d="M222 414 L286 414" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<circle cx="331" cy="414" r="34" fill="#edf9fe"/>
+<path d="M312 413 L331 397 L350 413 M318 409 V430 H344 V409 M327 430 V417 H335 V430" fill="none" stroke="#007fa8" stroke-width="2" stroke-linejoin="round"/>
+<text x="331" y="474" font-size="15" fill="#183642" font-weight="600" text-anchor="middle">Home Assistant</text>
+<path d="M370 414 L569 414" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+<!-- Valve bounds: 575,370 to 675,482. -->
+<ellipse cx="625" cy="385" rx="34" ry="12" fill="#f1f7fa" stroke="#96b8c8"/>
+<rect x="591" y="385" width="68" height="76" rx="15" fill="white" stroke="#96b8c8" />
+<rect x="598" y="399" width="54" height="32" rx="6" fill="#edf9fe" stroke="none" />
+<text x="625" y="421" font-size="18" fill="#007fa8" font-weight="600" text-anchor="middle">20°</text>
+<path d="M607 441 v10 M619 441 v10 M631 441 v10 M643 441 v10" stroke="#b8d0db" stroke-width="2"/>
+<rect x="603" y="461" width="44" height="13" rx="3" fill="#edf3f6" stroke="#96b8c8" />
+<text x="625" y="500" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">One remote reading</text>
+<path d="M25 540 L735 540" fill="none" stroke="#dce8ee" stroke-width="1.5"/>
+<text x="380" y="568" font-size="14" fill="#183642" font-weight="600" text-anchor="middle">With ZHA, readings stay separate until they reach the valve.</text>
+<text x="380" y="592" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">ZHA multi-source support required. Enable external mode; ZHA removes invalid sources.</text>
+</svg>

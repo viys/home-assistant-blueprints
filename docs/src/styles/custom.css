@@ -1,0 +1,228 @@
+@import '@fontsource-variable/figtree';
+@import '@fontsource-variable/instrument-sans';
+
+:root {
+  --ha-brand-blue: #18bcf2;
+  --ha-highlight-blue: #1abcf2;
+  --ha-link-blue: #007fa8;
+  --ha-highlight-shade: #086585;
+  --ha-button-ink: #002e3e;
+  --ha-button-hover: #b9e6fc;
+  --sl-font: 'Instrument Sans Variable', 'Segoe UI', sans-serif;
+  --sl-content-width: 52rem;
+  --sl-sidebar-width: 18rem;
+  --sl-text-body: 1.125rem;
+  --sl-line-height: 1.65;
+  --sl-text-h1: clamp(2rem, 1.5rem + 2vw, 3.5rem);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --sl-color-accent-low: rgb(26 188 242 / 10%);
+  --sl-color-accent: var(--ha-link-blue);
+  /* Keep content links and device previews on HA's link color explicitly. */
+  --sl-color-text-accent: var(--ha-link-blue);
+  --sl-color-accent-high: var(--ha-highlight-shade);
+  --sl-color-white: #222222;
+  --sl-color-gray-1: #343b40;
+  --sl-color-gray-2: #52616a;
+  --sl-color-gray-3: #75838c;
+  --sl-color-gray-4: #b5c0c7;
+  --sl-color-gray-5: #e2e8ec;
+  --sl-color-gray-6: #f1f5f7;
+  --sl-color-black: #fbfbfb;
+  --sl-color-bg-nav: #fbfbfb;
+  --sl-color-bg-sidebar: #fbfbfb;
+  --sl-color-hairline-light: #e8edef;
+}
+
+h1, h2, h3, h4, .site-title {
+  font-family: 'Figtree Variable', 'Segoe UI', sans-serif;
+  letter-spacing: -0.025em;
+}
+
+h1 {
+  font-weight: 800;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+.site-title {
+  font-weight: 750;
+  font-size: 1.35rem;
+  letter-spacing: -0.035em;
+  color: var(--sl-color-white);
+  gap: 0.6rem;
+}
+
+.site-title img {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* The theme selector is disabled, so its social-link separator has no purpose. */
+.social-icons::after {
+  display: none;
+}
+
+.sl-markdown-content h2 {
+  font-weight: 700;
+  margin-top: 2.5rem;
+}
+
+.sl-markdown-content p,
+.sl-markdown-content li {
+  line-height: 1.7;
+}
+
+.sl-markdown-content > p:first-child {
+  font-size: 1.25rem;
+  line-height: 1.65;
+}
+
+.sidebar-content a[aria-current='page'] {
+  border-radius: 0;
+  border-inline-start: 3px solid var(--ha-brand-blue);
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-text-accent);
+  font-weight: 650;
+}
+
+.blueprint-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.25rem;
+  margin-top: 1.75rem;
+  font-size: 0.9375rem;
+}
+
+.blueprint-actions a {
+  color: var(--sl-color-text-accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+.blueprint-actions .import-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1.2rem;
+  border-radius: 2rem;
+  background: var(--ha-brand-blue);
+  color: var(--ha-button-ink);
+  text-decoration: none;
+  font-weight: 650;
+}
+
+.blueprint-actions .import-link:hover {
+  background: var(--ha-button-hover);
+}
+
+.blueprint-downloads {
+  max-width: 100%;
+}
+
+.blueprint-actions:has(.blueprint-downloads[open]) {
+  align-items: flex-start;
+}
+
+.blueprint-downloads summary {
+  cursor: pointer;
+  color: var(--ha-link-blue);
+}
+
+.blueprint-downloads ul {
+  padding-inline-start: 1.25rem;
+  margin-block: 0.75rem 0;
+}
+
+.blueprint-downloads li + li {
+  margin-top: 0.5rem;
+}
+
+/* The same SVG is readable inline and opens at its full size on demand. */
+.sl-markdown-content img[src$='.svg'] {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+}
+
+.sl-markdown-content .card-grid {
+  gap: 1rem;
+}
+
+.sl-markdown-content .sl-link-card {
+  border-radius: 0.875rem;
+  box-shadow: none;
+}
+
+:root[data-theme='light'] .sl-link-card {
+  background: #ffffff;
+}
+
+/* Tables may scroll inside the article without widening the page on phones. */
+.sl-markdown-content table {
+  font-size: 0.9375rem;
+}
+
+a:focus-visible {
+  outline: 3px solid var(--ha-highlight-blue);
+  outline-offset: 4px;
+}
+
+/* Keep all three desktop columns inside one centered shell, as on HA's docs. */
+@media (min-width: 72rem) {
+  :root {
+    --manual-edge: max(1.5rem, calc((100vw - 94rem) / 2));
+    --manual-toc-width: 15rem;
+    --sl-sidebar-width: 22rem;
+    --sl-nav-pad-x: var(--manual-edge);
+  }
+
+  .sidebar-pane {
+    inset-inline-start: var(--manual-edge);
+    border-inline-end: 0;
+  }
+
+  .main-frame {
+    padding-inline-start: calc(var(--manual-edge) + var(--sl-sidebar-width));
+    padding-inline-end: var(--manual-edge);
+  }
+
+  header.header > .header {
+    grid-template-columns: var(--sl-sidebar-width) 1fr auto;
+  }
+
+  .right-sidebar-container {
+    flex: 0 0 var(--manual-toc-width);
+    width: var(--manual-toc-width);
+  }
+
+  .right-sidebar {
+    width: var(--manual-toc-width);
+    border-inline-start: 0;
+  }
+
+  [data-has-sidebar][data-has-toc] .main-pane {
+    flex: 1;
+    min-width: 0;
+    width: calc(100% - var(--manual-toc-width));
+    --sl-content-margin-inline: auto;
+  }
+}
+
+@media (max-width: 40rem) {
+  .sl-markdown-content p:has(> a > img[src$='.svg']) {
+    overflow-x: auto;
+  }
+
+  .sl-markdown-content img[src$='.svg'] {
+    min-width: 42rem;
+  }
+
+  .blueprint-actions {
+    gap: 0.75rem 1rem;
+  }
+}

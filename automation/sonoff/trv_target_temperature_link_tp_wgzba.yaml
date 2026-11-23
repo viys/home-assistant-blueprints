@@ -7,6 +7,8 @@ blueprint:
     change to the thermostat's target temperature is forwarded to the selected
     ZHA TRV-ZBL or TRV-ZBT valves; other selected valves are skipped.
   domain: automation
+  homeassistant:
+    min_version: 2025.4.0
 
   input:
     source_tp_wgzba:

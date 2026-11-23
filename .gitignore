@@ -2,3 +2,6 @@ __pycache__/
 *.py[cod]
 .venv/
 coverage-report/
+docs/node_modules/
+docs/.astro/
+docs/dist/
