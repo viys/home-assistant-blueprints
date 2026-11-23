@@ -42,7 +42,7 @@ All SONOFF blueprints are under [`automation/sonoff`](automation/sonoff).
 Expand a device below to browse its blueprints.
 
 <details>
-<summary><strong>SNZB-02DR2</strong> &nbsp; <code>1 blueprint</code></summary>
+<summary><strong>SNZB-02DR2</strong></summary>
 
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
@@ -53,7 +53,7 @@ Expand a device below to browse its blueprints.
 ---
 
 <details>
-<summary><strong>TP-WGZBA</strong> &nbsp; <code>4 blueprints</code></summary>
+<summary><strong>TP-WGZBA</strong></summary>
 
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
@@ -67,7 +67,7 @@ Expand a device below to browse its blueprints.
 ---
 
 <details>
-<summary><strong>TRV-ZBL</strong> &nbsp; <code>1 blueprint</code></summary>
+<summary><strong>TRV-ZBL</strong></summary>
 
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
@@ -78,7 +78,7 @@ Expand a device below to browse its blueprints.
 ---
 
 <details>
-<summary><strong>TRV-ZBT</strong> &nbsp; <code>1 blueprint</code></summary>
+<summary><strong>TRV-ZBT</strong></summary>
 
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
@@ -89,7 +89,7 @@ Expand a device below to browse its blueprints.
 ---
 
 <details>
-<summary><strong>TRVZB</strong> &nbsp; <code>2 blueprints</code></summary>
+<summary><strong>TRVZB</strong></summary>
 
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
