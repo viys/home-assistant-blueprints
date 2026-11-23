@@ -74,6 +74,18 @@ class AverageTemperatureTests(unittest.TestCase):
             run.fire("source_changed")
             self.assertEqual(len(run.calls), 1)
 
+    def test_maximum_validity_cannot_exceed_two_hours_and_expires_at_boundary(self):
+        """Cap the selectable lifetime at the device's two-hour timeout."""
+        # Use the selector's actual maximum to exercise the expiry boundary.
+        for integration in ("zha", "mqtt"):
+            run = average_runner(integration, sources=["sensor.source"])
+            setting = run.doc["blueprint"]["input"]["source_timeout"]
+            self.assertEqual(setting["selector"]["number"]["max"], 120)
+            run.inputs["source_timeout"] = setting["selector"]["number"]["max"]
+            run.clock = run.states["sensor.source"]["last_changed"] + timedelta(minutes=120)
+            run.fire("periodic_sync")
+            self.assertEqual(run.calls, [])
+
     def test_identical_values_and_attribute_updates_do_not_extend_validity(self):
         """Accept the agreed risk of excluding an unchanged reporting sensor."""
         # Both repeats and attributes preserve last_changed in the runner as in HA.
