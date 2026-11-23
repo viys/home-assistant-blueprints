@@ -2,18 +2,19 @@ blueprint:
   name: "Sync Remote Temperature to TRVZB"
   author: Sonoff
   description: >
-    Synchronizes an external temperature reading with a SONOFF TRVZB
-    thermostatic radiator valve connected through ZHA or Zigbee2MQTT. The
+    Synchronizes an external temperature reading with one or more SONOFF TRVZB
+    thermostatic radiator valves connected through ZHA or Zigbee2MQTT. The
     reading is applied whenever the valve's external temperature mode is
-    enabled, immediately and on each source update. Temperature values in
+    enabled, on source updates, startup, and automation reload. Temperature values in
     Celsius, Fahrenheit, or Kelvin are automatically converted to Celsius.
   domain: automation
   input:
     target_device:
-      name: TRVZB device
-      description: Select the ZHA or Zigbee2MQTT radiator valve that should receive the temperature.
+      name: TRVZB devices
+      description: Select one or more ZHA or Zigbee2MQTT radiator valves and enable their external temperature mode. Use a compatible ZHA quirk or Zigbee2MQTT converter. Use only one temperature synchronization automation per valve. Unavailable or failed valves do not prevent updates to the others.
       selector:
         device:
+          multiple: true
           filter:
             - integration: zha
               manufacturer: SONOFF
@@ -24,7 +25,7 @@ blueprint:
               model_id: TRVZB
     source_entity:
       name: External temperature sensor
-      description: Select a temperature sensor from another device. The target TRVZB's own temperature is not a valid source.
+      description: Select a temperature sensor from another device. Temperatures from any selected TRVZB are not valid sources.
       selector:
         entity:
           filter:
@@ -33,41 +34,24 @@ blueprint:
 
 variables:
   target_device: !input target_device
+  # Existing automations can still supply a single device ID.
+  target_devices: "{{ ([target_device] if target_device is string else target_device) | unique | list }}"
   source_entity: !input source_entity
-  target_integration: >
-    {% set ns = namespace(value='') %}
-    {% for identifier in (device_attr(target_device, 'identifiers') or []) %}
-      {% if identifier[0] == 'zha' %}
-        {% set ns.value = 'zha' %}
-      {% elif identifier[0] == 'mqtt' %}
-        {% set ns.value = 'mqtt' %}
-      {% endif %}
+  target_entities: >
+    {% set ns = namespace(entities=[]) %}
+    {% for device in target_devices %}
+      {% set ns.entities = ns.entities + (device_entities(device) or []) %}
     {% endfor %}
-    {{ ns.value }}
-  zha_external_temperature_sensor_switch: >
-    {{ (device_entities(target_device) or [])
-       | select('match', '^switch\\..*_external_temperature_sensor$')
-       | list
-       | first
-       | default('', true) }}
-  zha_external_temperature_sensor_value: >
-    {{ (device_entities(target_device) or [])
-       | select('match', '^number\\..*_external_temperature_sensor_value$')
-       | list
-       | first
-       | default('', true) }}
-  mqtt_temperature_sensor_select: >
-    {{ (device_entities(target_device) or [])
-       | select('match', '^select\\..*_temperature_sensor_select$')
-       | list
-       | first
-       | default('', true) }}
-  mqtt_external_temperature_input: >
-    {{ (device_entities(target_device) or [])
-       | select('match', '^number\\..*_external_temperature_input$')
-       | list
-       | first
-       | default('', true) }}
+    {{ ns.entities | unique | list }}
+  # Admit only mode transitions and destination recovery, never write echoes.
+  target_mode_entities: >
+    {{ target_entities
+       | select('match', '^(switch\\..*_external_temperature_sensor|select\\..*_temperature_sensor_select)$')
+       | list }}
+  target_value_entities: >
+    {{ target_entities
+       | select('match', '^number\\..*_(external_temperature_sensor_value|external_temperature_input)$')
+       | list }}
 
 triggers:
   - trigger: state
@@ -79,30 +63,33 @@ triggers:
   - trigger: event
     event_type: state_changed
     id: external_temperature_sensor_enabled
+  - trigger: homeassistant
+    id: ha_started
+    event: start
+  - trigger: event
+    id: automation_reloaded
+    event_type: automation_reloaded
 
 conditions:
   - condition: template
     value_template: >
-      {{ is_number(states(source_entity))
-         and state_attr(source_entity, 'unit_of_measurement') in ['°C', '°F', 'K']
-         and source_entity not in (device_entities(target_device) or [])
-         and device_attr(target_device, 'manufacturer') == 'SONOFF'
-         and ((target_integration | trim == 'zha'
-               and device_attr(target_device, 'model') == 'TRVZB'
-               and zha_external_temperature_sensor_switch | trim != ''
-               and zha_external_temperature_sensor_value | trim != ''
-               and is_state(zha_external_temperature_sensor_switch, 'on')
-               and (trigger.id == 'source_temperature'
-                    or (trigger.event.data.entity_id == zha_external_temperature_sensor_switch
-                        and trigger.event.data.new_state is not none
-                        and trigger.event.data.new_state.state == 'on')))
-              or (target_integration | trim == 'mqtt'
-                  and device_attr(target_device, 'model') == 'Zigbee thermostatic radiator valve'
-                  and mqtt_external_temperature_input | trim != ''
-                  and mqtt_temperature_sensor_select | trim != ''
-                  and trigger.id == 'source_temperature')) }}
+      {{ trigger.id != 'external_temperature_sensor_enabled'
+         or (trigger.event.data.new_state is not none
+             and (trigger.event.data.old_state is none
+                  or trigger.event.data.old_state.state != trigger.event.data.new_state.state)
+             and (trigger.event.data.entity_id in target_mode_entities
+                  or (trigger.event.data.entity_id in target_value_entities
+                      and trigger.event.data.old_state is not none
+                      and trigger.event.data.old_state.state in ['unknown', 'unavailable']
+                      and is_number(trigger.event.data.new_state.state)))) }}
 
 actions:
+  # Recheck source state when a queued run actually starts.
+  - condition: template
+    value_template: >
+      {{ source_entity not in target_entities
+         and is_number(states(source_entity))
+         and state_attr(source_entity, 'unit_of_measurement') in ['°C', '°F', 'K'] }}
   - variables:
       external_temperature: >
         {% set temperature = states(source_entity) | float %}
@@ -110,28 +97,74 @@ actions:
         {{ ((temperature - 32) * 5 / 9 if unit == '°F'
              else temperature - 273.15 if unit == 'K'
              else temperature) | round(1) }}
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ target_integration | trim == 'zha' }}"
-        sequence:
-          - action: number.set_value
-            target:
-              entity_id: "{{ zha_external_temperature_sensor_value | trim }}"
-            data:
-              value: "{{ external_temperature }}"
-      - conditions:
-          - condition: template
-            value_template: >
-              {{ target_integration | trim == 'mqtt'
-                 and mqtt_external_temperature_input | trim != ''
-                 and mqtt_temperature_sensor_select | trim != ''
-                 and trigger.id == 'source_temperature' }}
-        sequence:
-          - action: number.set_value
-            target:
-              entity_id: "{{ mqtt_external_temperature_input | trim }}"
-            data:
-              value: "{{ external_temperature }}"
+  - repeat:
+      for_each: "{{ target_devices }}"
+      sequence:
+        - variables:
+            target_device: "{{ repeat.item }}"
+            target_integration: >
+              {% set ns = namespace(value='') %}
+              {% for identifier in (device_attr(target_device, 'identifiers') or []) %}
+                {% if identifier[0] == 'zha' %}
+                  {% set ns.value = 'zha' %}
+                {% elif identifier[0] == 'mqtt' %}
+                  {% set ns.value = 'mqtt' %}
+                {% endif %}
+              {% endfor %}
+              {{ ns.value }}
+            zha_external_temperature_sensor_switch: >
+              {{ (device_entities(target_device) or [])
+                 | select('match', '^switch\\..*_external_temperature_sensor$')
+                 | list
+                 | first
+                 | default('', true) }}
+            zha_external_temperature_sensor_value: >
+              {{ (device_entities(target_device) or [])
+                 | select('match', '^number\\..*_external_temperature_sensor_value$')
+                 | list
+                 | first
+                 | default('', true) }}
+            mqtt_temperature_sensor_select: >
+              {{ (device_entities(target_device) or [])
+                 | select('match', '^select\\..*_temperature_sensor_select$')
+                 | list
+                 | first
+                 | default('', true) }}
+            mqtt_external_temperature_input: >
+              {{ (device_entities(target_device) or [])
+                 | select('match', '^number\\..*_external_temperature_input$')
+                 | list
+                 | first
+                 | default('', true) }}
+        - condition: template
+          value_template: >
+            {{ trigger.id != 'external_temperature_sensor_enabled'
+               or trigger.event.data.entity_id in
+                  [zha_external_temperature_sensor_switch, mqtt_temperature_sensor_select,
+                   zha_external_temperature_sensor_value, mqtt_external_temperature_input] }}
+        # Evaluate each valve's current mode at dispatch time, not queue admission.
+        - condition: template
+          value_template: >
+            {{ device_attr(target_device, 'manufacturer') == 'SONOFF'
+               and ((target_integration | trim == 'zha'
+                     and device_attr(target_device, 'model') == 'TRVZB'
+                     and zha_external_temperature_sensor_value | trim != ''
+                     and states(zha_external_temperature_sensor_value) not in ['unknown', 'unavailable']
+                     and is_state(zha_external_temperature_sensor_switch, 'on'))
+                    or (target_integration | trim == 'mqtt'
+                        and device_attr(target_device, 'model') == 'Zigbee thermostatic radiator valve'
+                        and mqtt_external_temperature_input | trim != ''
+                        and states(mqtt_external_temperature_input) not in ['unknown', 'unavailable']
+                        and states(mqtt_temperature_sensor_select) in
+                            ['external', 'external_2', 'external_3',
+                             'remote_temperature', 'remote_source_offline'])) }}
+        - action: number.set_value
+          continue_on_error: true
+          target:
+            entity_id: >
+              {{ zha_external_temperature_sensor_value | trim if target_integration | trim == 'zha'
+                 else mqtt_external_temperature_input | trim }}
+          data:
+            value: "{{ external_temperature }}"
 
-mode: restart
+mode: queued

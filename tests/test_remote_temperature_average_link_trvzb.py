@@ -4,7 +4,6 @@ from datetime import timedelta
 import unittest
 
 from tests.common.single_source_checks import single_source
-from tools.blueprint_runner import HandledServiceError
 
 
 def average_runner(integration="zha", sources=None):
@@ -32,7 +31,7 @@ class AverageTemperatureTests(unittest.TestCase):
             run.set_state("sensor.third", "21", "°C")
             run.fire("periodic_sync")
             suffix = "external_temperature_sensor_value" if integration == "zha" else "external_temperature_input"
-            self.assertEqual(run.calls, [{"action": "number.set_value",
+            self.assertEqual(run.calls, [{"action": "number.set_value", "continue_on_error": True,
                                          "target": {"entity_id": f"number.target_{suffix}"},
                                          "data": {"value": 21.7}}])
 
@@ -219,13 +218,13 @@ class AverageTemperatureTests(unittest.TestCase):
 
     def test_service_failure_can_retry_on_next_periodic_run(self):
         """A failed temperature write does not permanently disable later synchronization."""
-        # Integration failures propagate, with the next periodic trigger making a fresh attempt.
+        # Integration failures are isolated, with the next periodic trigger making a fresh attempt.
         for integration in ("zha", "mqtt"):
             run = average_runner(integration)
             suffix = "external_temperature_sensor_value" if integration == "zha" else "external_temperature_input"
             run.fail.add(f"number.target_{suffix}")
-            with self.assertRaises(HandledServiceError):
-                run.fire("periodic_sync")
+            run.fire("periodic_sync")
+            self.assertEqual(len(run.errors), 1)
             run.fail.clear()
             run.calls.clear()
             run.set_state("sensor.source", "22", "°C")
@@ -241,3 +240,86 @@ class AverageTemperatureTests(unittest.TestCase):
         self.assertEqual(run.doc["blueprint"]["input"]["target_device"]["selector"],
                          reference.doc["blueprint"]["input"]["target_device"]["selector"])
         self.assertEqual(run.doc["blueprint"]["homeassistant"]["min_version"], "2025.4.0")
+
+
+class MultipleTargetAverageTests(unittest.TestCase):
+    """Verify one shared average reaches independent ZHA and MQTT valves."""
+
+    def setUp(self):
+        """Bind an average source group to one target of each integration."""
+        # Copy only destination fixtures so the source group remains shared.
+        self.run = average_runner()
+        peer = average_runner("mqtt")
+        self.run.inputs["target_device"] = ["target", "peer", "target"]
+        self.run.devices["peer"] = peer.devices["target"]
+        self.run.entity_map["peer"] = [entity.replace("target_", "peer_")
+                                       for entity in peer.entity_map["target"]]
+        for entity in peer.entity_map["target"]:
+            snapshot = peer.states[entity]
+            if snapshot:
+                self.run.set_state(entity.replace("target_", "peer_"), snapshot["state"],
+                                   **snapshot["attributes"])
+
+    def test_shared_average_reaches_both_targets_on_each_full_sync(self):
+        """All full synchronization triggers update each distinct target once."""
+        # Scalar target compatibility is also exercised by the existing average tests.
+        for trigger in ("source_changed", "ha_started", "automation_reloaded", "periodic_sync"):
+            self.run.calls.clear()
+            self.run.fire(trigger)
+            self.assertEqual([call["data"]["value"] for call in self.run.calls], [22, 22])
+            self.assertEqual([call["target"]["entity_id"] for call in self.run.calls],
+                             ["number.target_external_temperature_sensor_value",
+                              "number.peer_external_temperature_input"])
+        self.assertEqual(self.run.doc["mode"], "queued")
+
+    def test_first_failure_and_disabled_mode_do_not_block_peer(self):
+        """A broken first destination cannot abort the second destination."""
+        # A handled error remains recorded while the healthy valve receives the mean.
+        self.run.fail.add("number.target_external_temperature_sensor_value")
+        self.run.fire("periodic_sync")
+        self.assertEqual(len(self.run.errors), 1)
+        self.assertEqual(self.run.calls[-1]["target"]["entity_id"], "number.peer_external_temperature_input")
+        self.run.fail.clear()
+        self.run.calls.clear()
+        self.run.set_state("switch.target_external_temperature_sensor", "off")
+        self.run.fire("periodic_sync")
+        self.assertEqual(len(self.run.calls), 1)
+        self.assertEqual(self.run.calls[0]["data"]["value"], 22)
+
+    def test_mode_and_recovery_events_only_update_their_owner(self):
+        """An MQTT mode enable or recovered number does not refresh the ZHA peer."""
+        # Number echoes remain excluded by the global event filter.
+        for entity, before, after in (
+            ("select.peer_temperature_sensor_select", "internal", "remote_temperature"),
+            ("number.peer_external_temperature_input", "unavailable", "22"),
+        ):
+            self.run.calls.clear()
+            old = self.run.set_state(entity, before)
+            new = self.run.set_state(entity, after)
+            self.run.dispatch_state(entity, old, new)
+            self.assertEqual(len(self.run.calls), 1)
+            self.assertEqual(self.run.calls[0]["target"]["entity_id"], "number.peer_external_temperature_input")
+        self.run.calls.clear()
+        self.run.dispatch_state("number.peer_external_temperature_input", {"state": "22"}, {"state": "23"})
+        self.assertEqual(self.run.calls, [])
+
+    def test_group_sources_exclude_all_selected_valves_and_expire_together(self):
+        """Every target receives the same mean after excluding any valve's sensors."""
+        # A sensor from the second valve cannot influence the first valve's result.
+        self.run.entity_map["peer"].append("sensor.second")
+        self.run.fire("periodic_sync")
+        self.assertEqual([call["data"]["value"] for call in self.run.calls], [20, 20])
+        self.run.calls.clear()
+        self.run.clock += timedelta(minutes=61)
+        self.run.fire("periodic_sync")
+        self.assertEqual(self.run.calls, [])
+        self.run.set_state("sensor.source", "21", "°C")
+        self.run.fire("source_changed")
+        self.assertEqual([call["data"]["value"] for call in self.run.calls], [21, 21])
+
+    def test_empty_target_list_sends_nothing(self):
+        """An automation with no selected destinations makes no service calls."""
+        # This must not turn an empty target into a broadcast service target.
+        self.run.inputs["target_device"] = []
+        self.run.fire("periodic_sync")
+        self.assertEqual(self.run.calls, [])

@@ -17,6 +17,7 @@ def single_source(case, integration="zha"):
                                 "select.target_temperature_sensor_select",
                                 "number.target_external_temperature_input"]
     run.set_state("sensor.source", "20", "°C")
+    run.set_state("number.target_external_temperature_sensor_value", "20", "°C")
     run.set_state("switch.target_external_temperature_sensor", "on")
     run.set_state("select.target_temperature_sensor_select", "external")
     run.set_state("number.target_external_temperature_input", "20", "°C",
@@ -100,13 +101,14 @@ class SingleSourceChecks:
                 run.dispatch_state("sensor.source", old, new)
                 self.assertEqual(run.calls, [], (case[0], integration))
 
-    def test_mqtt_mode_event_does_not_sync_or_change_mode(self):
-        """MQTT accepts source updates only; select-entity events remain unrelated."""
-        # Current YAML does not command the source selector itself.
+    def test_mqtt_mode_event_respects_blueprint_policy(self):
+        """Mode events may resync temperature, but must never write the selector."""
+        # Each dedicated test class declares whether MQTT mode enable should resync.
         for case in self.cases:
             run = single_source(case, "mqtt")
             run.dispatch_state("select.target_temperature_sensor_select", {"state": "internal"}, {"state": "external"})
-            self.assertEqual(run.calls, [])
+            self.assertEqual(len(run.calls), int(getattr(self, "mqtt_mode_sync", False)))
+            self.assertNotIn("select.select_option", [call["action"] for call in run.calls])
 
     def test_invalid_sources_and_target_metadata_do_not_send(self):
         """Reject unavailable, nonnumeric, unsupported-unit, self, and wrong targets."""
@@ -134,9 +136,9 @@ class SingleSourceChecks:
                 run.fire("source_temperature")
                 self.assertEqual(run.calls, [])
 
-    def test_service_failure_propagates_and_fresh_run_can_send(self):
-        """Document existing failure behavior without inventing retries or swallowing errors."""
-        # These blueprints do not promise that a failed run is automatically retried.
+    def test_service_failure_respects_blueprint_policy_and_fresh_run_can_send(self):
+        """Check declared error isolation and recovery on a subsequent run."""
+        # Only multi-target blueprints opt into handling individual write failures.
         for case in self.cases:
             for integration in ("zha", "mqtt"):
                 run = single_source(case, integration)
@@ -144,8 +146,12 @@ class SingleSourceChecks:
                     "number.target_external_temperature_sensor_value" if integration == "zha"
                     else "number.target_external_temperature_input")
                 run.fail.add(key)
-                with self.assertRaises(HandledServiceError):
+                if getattr(self, "continue_on_error", False):
                     run.fire("source_temperature")
+                    self.assertEqual(len(run.errors), 1)
+                else:
+                    with self.assertRaises(HandledServiceError):
+                        run.fire("source_temperature")
                 run.fail.clear()
                 run.set_state("sensor.source", "22", "°C")
                 run.fire("source_temperature")
