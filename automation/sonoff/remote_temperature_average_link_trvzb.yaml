@@ -26,15 +26,6 @@ blueprint:
               manufacturer: SONOFF
               model: Zigbee thermostatic radiator valve
               model_id: TRVZB
-    source_entities:
-      name: External temperature sensors
-      description: Select one or more temperature sensors from other devices. Each distinct sensor has equal weight. The target radiator valve's own sensors are excluded. The average is sent using the integration's external temperature input and is subject to its supported temperature range.
-      selector:
-        entity:
-          multiple: true
-          filter:
-            domain: sensor
-            device_class: temperature
     source_timeout:
       name: Temperature validity period
       description: Shared by all selected temperature sources. Exclude a source when its temperature state has not changed for this many minutes. Repeated identical readings and attribute updates do not extend validity. Home Assistant restarts may extend validity. Expiration is checked every minute.
@@ -46,6 +37,15 @@ blueprint:
           step: 1
           unit_of_measurement: min
           mode: box
+    source_entities:
+      name: External temperature sensors
+      description: Select one or more temperature sensors from other devices. Each distinct sensor has equal weight. The target radiator valve's own sensors are excluded. The average is sent using the integration's external temperature input and is subject to its supported temperature range.
+      selector:
+        entity:
+          multiple: true
+          filter:
+            domain: sensor
+            device_class: temperature
 
 variables:
   target_device: !input target_device
