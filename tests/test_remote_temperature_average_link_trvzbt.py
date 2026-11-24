@@ -340,3 +340,46 @@ class MultipleTargetAverageTests(unittest.TestCase):
         self.run.inputs["target_device"] = []
         self.run.fire("periodic_sync")
         self.assertEqual(self.run.calls, [])
+
+    def test_numbered_same_model_targets_receive_updates_and_recovery(self):
+        """HA duplicate-name suffixes must not hide any selected valve or its events."""
+        # Reproduce same-name devices: only the appended entity number differs.
+        for integration in ("zha", "mqtt"):
+            for suffix in ("_2", "_3", "_12"):
+                with self.subTest(integration=integration, suffix=suffix):
+                    run = average_runner(integration)
+                    run.inputs["target_device"] = ["target", "peer"]
+                    run.devices["peer"] = dict(run.devices["target"])
+                    run.entity_map["peer"] = [entity + suffix for entity in run.entity_map["target"]]
+                    for entity in run.entity_map["target"]:
+                        snapshot = run.states[entity]
+                        if snapshot:
+                            run.set_state(entity + suffix, snapshot["state"], **snapshot["attributes"])
+                    destination = ("number.target_external_temperature_sensor_value" if integration == "zha"
+                                   else "number.target_external_temperature_input")
+                    run.fire("periodic_sync")
+                    self.assertEqual([call["target"]["entity_id"] for call in run.calls],
+                                     [destination, destination + suffix])
+                    self.assertEqual([call["data"]["value"] for call in run.calls], [22, 22])
+                    run.calls.clear()
+                    run.fail.add(destination)
+                    run.fire("periodic_sync")
+                    self.assertEqual(run.calls[-1]["target"]["entity_id"], destination + suffix)
+                    self.assertEqual(len(run.errors), 1)
+                    run.calls.clear()
+                    mode = ("switch.target_external_temperature_sensor" if integration == "zha"
+                            else "select.target_temperature_sensor_select") + suffix
+                    enabled = run.states(mode)
+                    old = run.set_state(mode, "off" if integration == "zha" else "internal")
+                    new = run.set_state(mode, enabled)
+                    run.dispatch_state(mode, old, new)
+                    self.assertEqual([call["target"]["entity_id"] for call in run.calls], [destination + suffix])
+                    run.calls.clear()
+                    old = run.set_state(destination + suffix, "unavailable")
+                    new = run.set_state(destination + suffix, "22", "°C")
+                    run.dispatch_state(destination + suffix, old, new)
+                    self.assertEqual([call["target"]["entity_id"] for call in run.calls], [destination + suffix])
+                    run.calls.clear()
+                    newer = run.set_state(destination + suffix, "23", "°C")
+                    run.dispatch_state(destination + suffix, new, newer)
+                    self.assertEqual(run.calls, [])

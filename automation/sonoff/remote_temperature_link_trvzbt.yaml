@@ -48,27 +48,28 @@ variables:
       {% endif %}
     {% endfor %}
     {{ ns.value }}
+  # HA appends numeric suffixes when devices produce the same entity names.
   zha_temperature_sensor_switch: >
     {{ (device_entities(target_device) or [])
-       | select('match', '^switch\\..*_(temperature_sensor_select|external_temperature_sensor)$')
+       | select('match', '^switch\\..*_(temperature_sensor_select|external_temperature_sensor)(?:_[0-9]+)?$')
        | list
        | first
        | default('', true) }}
   zha_external_temperature_sensor_value: >
     {{ (device_entities(target_device) or [])
-       | select('match', '^number\\..*_external_temperature_sensor_value$')
+       | select('match', '^number\\..*_external_temperature_sensor_value(?:_[0-9]+)?$')
        | list
        | first
        | default('', true) }}
   mqtt_temperature_sensor_select: >
     {{ (device_entities(target_device) or [])
-       | select('match', '^select\\..*_temperature_sensor_select$')
+       | select('match', '^select\\..*_temperature_sensor_select(?:_[0-9]+)?$')
        | list
        | first
        | default('', true) }}
   mqtt_external_temperature_input: >
     {{ (device_entities(target_device) or [])
-       | select('match', '^number\\..*_external_temperature_input$')
+       | select('match', '^number\\..*_external_temperature_input(?:_[0-9]+)?$')
        | list
        | first
        | default('', true) }}

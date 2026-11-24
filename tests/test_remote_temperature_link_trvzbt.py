@@ -19,3 +19,32 @@ class RemoteTemperatureTests(SingleSourceChecks, unittest.TestCase):
         run.set_state("switch.target_temperature_sensor_select", "on")
         run.fire("source_temperature")
         self.assertEqual(run.calls[0]["data"]["value"], 20)
+
+    def test_numbered_entities_support_both_zha_switch_names_and_mqtt_input(self):
+        """A selected ZBT may have an HA-generated duplicate-name suffix."""
+        # Verify discovery and the ZHA mode-enable path without changing MQTT policy.
+        for integration in ("zha", "mqtt"):
+            for switch_suffix in ("external_temperature_sensor", "temperature_sensor_select"):
+                for suffix in ("_2", "_3", "_12"):
+                    with self.subTest(integration=integration, switch=switch_suffix, suffix=suffix):
+                        run = single_source(self.cases[0], integration)
+                        run.entity_map["target"][0] = "switch.target_" + switch_suffix
+                        run.set_state(run.entity_map["target"][0], "on")
+                        entities = list(run.entity_map["target"])
+                        run.entity_map["target"] = [entity + suffix for entity in entities]
+                        for entity in entities:
+                            snapshot = run.states[entity]
+                            if snapshot:
+                                run.set_state(entity + suffix, snapshot["state"], **snapshot["attributes"])
+                        run.fire("source_temperature")
+                        destination = ("number.target_external_temperature_sensor_value" if integration == "zha"
+                                       else "number.target_external_temperature_input") + suffix
+                        self.assertEqual([call["target"]["entity_id"] for call in run.calls], [destination])
+                        self.assertEqual(run.calls[0]["data"]["value"], 20)
+                        if integration == "zha":
+                            run.calls.clear()
+                            mode = run.entity_map["target"][0]
+                            old = run.set_state(mode, "off")
+                            new = run.set_state(mode, "on")
+                            run.dispatch_state(mode, old, new)
+                            self.assertEqual([call["target"]["entity_id"] for call in run.calls], [destination])
