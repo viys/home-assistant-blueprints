@@ -53,7 +53,11 @@ Use overview tables to compare source/target counts, integrations, and where
 averaging happens. Keep parameter tables concise; put expiration rules and
 other behavior in dedicated sections. Place synchronization triggers next to
 configuration and make verification steps describe an observable device result.
-Keep **Import blueprint** prominent; stable raw YAML, source, and development
+Use Home Assistant's official `https://my.home-assistant.io/badges/blueprint_import.svg`
+badge at `40px` high for **Import blueprint** on the website; keep the compact
+README badges at their existing size. Preserve the
+official artwork and the image's accessible label; do not add custom button
+colors, padding, or an extra arrow. Stable raw YAML, source, and development
 YAML belong under **Other download options**. Preserve a full-size diagram
 link without repeating mobile scrolling instructions on every page.
 Keep shared pages free of model-specific requirements and examples. Only the
@@ -95,14 +99,13 @@ the right-hand contents column is `15rem`; keep the article's `52rem` reading
 width. Below that breakpoint, retain Starlight's tablet and mobile layout.
 
 Match Home Assistant's color roles rather than using one blue everywhere:
-`--ha-brand-blue` (`#18bcf2`) is the main button and icon color,
+`--ha-brand-blue` (`#18bcf2`) is the brand icon and selected-navigation accent,
 `--ha-link-blue` (`#007fa8`) is the readable link color, and
 `--ha-highlight-blue` (`#1abcf2`) is used for diagram arrows and focus outlines.
 Set `--sl-color-text-accent` explicitly to `--ha-link-blue` so device cards,
 device overview links, and guide links share the official text-link blue.
-The button's dark text (`#002e3e`) and hover surface (`#b9e6fc`) follow the
-official website header. Keep these tokens in `src/styles/custom.css` and SVG
-colors synchronized. Sources:
+The import badge uses its official artwork colors. Keep the other tokens in
+`src/styles/custom.css` and diagram colors synchronized. Sources:
 [HA website colors](https://github.com/home-assistant/home-assistant.io/blob/current/sass/homeassistant/_variables.scss)
 and [header button styles](https://github.com/home-assistant/home-assistant.io/blob/current/sass/homeassistant/base/_header.scss).
 
