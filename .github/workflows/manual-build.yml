@@ -1,0 +1,36 @@
+name: Build user manual
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  ASTRO_TELEMETRY_DISABLED: "1"
+
+jobs:
+  build:
+    name: Build and check manual
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+      - name: Install documentation dependencies
+        run: npm ci --prefix docs --no-fund --no-audit
+      - name: Build manual and search index
+        run: npm run build --prefix docs
+      - name: Check rendered links and images
+        run: python3 tools/check_site.py docs/dist
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: docs/dist
+

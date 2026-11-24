@@ -142,4 +142,11 @@ Every new blueprint needs a matching entry in `README.md` with its summary, stab
 
 ## Commits & Pull Requests
 
+Contributions to `dev` must use PRs and squash merging. Stable `vMAJOR.MINOR.PATCH`
+tags trigger `release.yml`, which validates the tag's exact commit and then
+fast-forwards `master` without rewriting history. Keep write credentials out of
+validation jobs, reject divergent or non-linear release ranges, and recheck
+the baseline before updating the remote. See `docs/RELEASING.md` for repository
+rules and tag creation. Never create or push a real release tag as a test.
+
 Use short, imperative Conventional Commit-style subjects, for example `feat: add TRV temperature sync blueprint` or `docs: fix blueprint import links`. Keep each commit focused. Pull requests should state the supported device and integrations, describe behavior changes and synchronized documentation, link related issues when applicable, and include the Home Assistant version used for manual validation or state that manual validation was not performed. Include screenshots only when a UI-facing documentation change benefits from one.

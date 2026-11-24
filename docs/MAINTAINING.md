@@ -126,9 +126,16 @@ Keep the GitHub icon black rather than inheriting the blue text-link color.
 ## Publish
 
 Set **Settings > Pages > Build and deployment > Source** to **GitHub Actions**.
-The Pages workflow builds `dev` and pull requests without deployment permissions.
-Only pushes or manual runs on `master` publish the stable manual. Allow `master`
-in the repository's `github-pages` environment deployment rules.
+Pushes or manual runs on `master` and `dev` publish the same site; the most
+recent successful deployment replaces its content. Pull requests build only.
+Both branch publishing and tagged releases reuse `manual-build.yml` to check
+the production site and upload its artifact. Allow `master`, `dev`, and tags
+matching `v*` in the `github-pages` environment's deployment rules.
+
+Stable version tags validate and fast-forward `master` using the built-in
+GitHub token, then deploy the checked artifact explicitly. See
+[Releasing](RELEASING.md) for the branch protections, tag commands, validation
+steps, and failure handling. No separate development site is published.
 
 If the repository is renamed or a custom domain is added, update `site` and
 `base` in `astro.config.mjs`, the workflow's link-check base path, and README
