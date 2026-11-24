@@ -55,16 +55,17 @@ class DocumentationTests(unittest.TestCase):
                 self.assertFalse(svg.findall(".//svg:script", ns))
                 self.assertIn(f"{blueprint.stem}.svg", text)
 
-    def test_deployment_is_master_only_with_read_only_builds(self):
-        """Keep development and PR validation separate from publication permissions."""
+    def test_both_branches_publish_but_prs_remain_read_only(self):
+        """Build once through the reusable job and publish one shared branch site."""
         # BaseLoader preserves the workflow's on key instead of interpreting YAML 1.1 booleans.
         workflow = yaml.load((ROOT / ".github/workflows/pages.yml").read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
         self.assertEqual(workflow["permissions"], {"contents": "read"})
         self.assertIn("pull_request", workflow["on"])
         self.assertEqual(workflow["on"]["push"]["branches"], ["master", "dev"])
         deploy = workflow["jobs"]["deploy"]
-        self.assertIn("github.ref == 'refs/heads/master'", deploy["if"])
-        self.assertIn("github.event_name != 'pull_request'", deploy["if"])
+        self.assertEqual(deploy["if"], "github.event_name != 'pull_request' && "
+                         "(github.ref == 'refs/heads/master' || github.ref == 'refs/heads/dev')")
+        self.assertEqual(workflow["jobs"]["build"]["uses"], "./.github/workflows/manual-build.yml")
         self.assertEqual(deploy["needs"], "build")
         self.assertEqual(deploy["permissions"], {"pages": "write", "id-token": "write"})
 

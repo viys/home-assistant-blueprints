@@ -1,0 +1,89 @@
+name: Release tagged version
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-master
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    name: Validate release ancestry
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      candidate: ${{ steps.plan.outputs.candidate }}
+      master: ${{ steps.plan.outputs.master }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Inspect immutable release candidate
+        id: plan
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -Eeuo pipefail
+          candidate=$(git rev-parse HEAD)
+          python3 -m tools.release_master --tag "$RELEASE_TAG" --candidate "$candidate" --github-output "$GITHUB_OUTPUT"
+
+  checks:
+    name: Checks
+    needs: inspect
+    uses: ./.github/workflows/checks.yml
+    with:
+      base-sha: ${{ needs.inspect.outputs.master }}
+
+  manual:
+    name: Manual
+    needs: inspect
+    uses: ./.github/workflows/manual-build.yml
+
+  promote:
+    name: Fast-forward master
+    needs: [inspect, checks, manual]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.inspect.outputs.candidate }}
+          fetch-depth: 0
+          # Only this validated job receives credentials capable of updating master.
+          persist-credentials: true
+      - name: Recheck remote refs and publish the exact tested commit
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          CANDIDATE: ${{ needs.inspect.outputs.candidate }}
+          EXPECTED_MASTER: ${{ needs.inspect.outputs.master }}
+        run: |
+          set -Eeuo pipefail
+          python3 -m tools.release_master --tag "$RELEASE_TAG" --candidate "$CANDIDATE" --expected-master "$EXPECTED_MASTER" --push
+
+  deploy:
+    name: Publish tagged manual
+    needs: [promote, manual]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Deploy the artifact already built and checked at this tag; no second push event is needed.
+      - name: Deploy validated Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5

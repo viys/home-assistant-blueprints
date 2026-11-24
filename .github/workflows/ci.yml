@@ -2,6 +2,8 @@ name: CI
 
 on:
   push:
+    # Version tags run the same checks inside release.yml before master can move.
+    branches: ["**"]
 
 permissions:
   contents: read
