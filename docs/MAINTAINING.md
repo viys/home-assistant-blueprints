@@ -46,6 +46,34 @@ Each entry declares device-role columns and aligned ZHA and Zigbee2MQTT status
 arrays (supported, limited, experimental, not_supported), plus an optional note.
 Check both stable and development YAML when updating claims; note any differences
 and do not imply hardware validation. Keep platform-specific setup in the guide.
+
+
+### Compatibility table design
+
+Render the shared `BlueprintCompatibility.astro` component below the import and
+download actions, before the guide body. Every published blueprint guide uses
+the same compatibility presentation.
+
+- List ZHA first and Zigbee2MQTT second. Use original-color official platform
+  logos, cropped to 28 × 28 px circles, with an 8 px gap before the name.
+  Keep decorative logo alt text empty because the adjacent name identifies it.
+- Use **Integration** and **Status** headers with approximately 75% / 25%
+  column widths. For different source and target support, use explicit
+  device-role columns instead.
+- Use compact rows, a subtle header background, and fine horizontal separators;
+  avoid heavy borders and decorative cards. Retain the website's light theme.
+- Use green text and a filled green circle with a white check for Supported;
+  red with a cross for Not supported; amber with an exclamation mark for
+  Limited support; neutral with a diamond for Experimental. Always retain
+  readable text alongside the symbol.
+- Vertically align names, logos, and statuses; keep status labels on one line.
+  Allow horizontal scrolling on narrow screens, and place concise notes below
+  the table.
+- Keep the JSON metadata as the single source of compatibility status. Do not
+  duplicate tables in Markdown or add custom fields to automation YAML.
+- Verify official logo URLs, metadata tests, production build, and the rendered
+  table at desktop and mobile widths when changing this design.
+
 When updating Pages, check these details against the current blueprint. Offline
 checks validate existing guide metadata and SVG structure; they do not require
 every blueprint to appear in Pages or force guide text to change with YAML.
