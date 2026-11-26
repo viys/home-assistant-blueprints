@@ -1,0 +1,51 @@
+---
+import compatibility from '../data/blueprint-compatibility.json';
+
+const { blueprint } = Astro.props;
+const entry = compatibility[blueprint as keyof typeof compatibility];
+if (!entry) throw new Error(`Missing compatibility for ${blueprint}`);
+const labels = {
+  supported: ['✓', 'Supported'],
+  limited: ['!', 'Limited support'],
+  experimental: ['◇', 'Experimental'],
+  not_supported: ['✕', 'Not supported'],
+} as const;
+const integrations = [
+  { name: 'ZHA', statuses: entry.zha },
+  { name: 'Zigbee2MQTT', statuses: entry.zigbee2mqtt },
+];
+---
+<section class="blueprint-compatibility" aria-label="Compatibility">
+  <h2>Compatibility</h2>
+  <div class="compatibility-scroll">
+    <table>
+      <thead><tr><th scope="col">Integration</th>{entry.columns.map(column => <th scope="col">{entry.columns.length === 1 ? 'Status' : column}</th>)}</tr></thead>
+      <tbody>
+        {integrations.map(({ name, statuses }) => (
+          <tr><th scope="row">{name}</th>{statuses.map(status => {
+            const [symbol, label] = labels[status as keyof typeof labels];
+            return <td><span class:list={['compatibility-status', status]}><span aria-hidden="true">{symbol}</span> {label}</span></td>;
+          })}</tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  {'note' in entry && <p>{entry.note}</p>}
+  <p class="compatibility-caption">Integration support describes the documented implementation, not hardware certification. The import button uses the stable version; development features may not be available there yet.</p>
+</section>
+<style>
+  .blueprint-compatibility { margin-top: 1.5rem; font-size: .9375rem; }
+  h2 { font-size: 1.125rem; margin: 0 0 .65rem; }
+  .compatibility-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; text-align: left; }
+  th, td { padding: .55rem .7rem; border-bottom: 1px solid var(--sl-color-gray-5); }
+  thead th { background: var(--sl-color-gray-6); font-weight: 650; }
+  tbody th { font-weight: 600; }
+  .compatibility-status { white-space: nowrap; font-weight: 600; }
+  .supported { color: #167344; }
+  .not_supported { color: #b42318; }
+  .limited { color: #925a00; }
+  .experimental { color: var(--sl-color-gray-2); }
+  p { margin: .6rem 0 0; }
+  .compatibility-caption { color: var(--sl-color-gray-2); font-size: .85rem; }
+</style>

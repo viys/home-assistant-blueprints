@@ -40,6 +40,12 @@ Each blueprint included in Pages has one guide and one SVG using its YAML filena
 front matter contains `blueprint: <yaml_filename_stem>`; the shared title component
 creates stable import, raw YAML, source, and development links from that field.
 Keep the title equal to `blueprint.name` and document integration differences.
+Maintain platform status in `src/data/blueprint-compatibility.json`, keyed by the
+blueprint stem. The shared title renders the compatibility table automatically.
+Each entry declares device-role columns and aligned ZHA and Zigbee2MQTT status
+arrays (supported, limited, experimental, not_supported), plus an optional note.
+Check both stable and development YAML when updating claims; note any differences
+and do not imply hardware validation. Keep platform-specific setup in the guide.
 When updating Pages, check these details against the current blueprint. Offline
 checks validate existing guide metadata and SVG structure; they do not require
 every blueprint to appear in Pages or force guide text to change with YAML.

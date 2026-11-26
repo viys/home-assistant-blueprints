@@ -81,8 +81,9 @@ rewriting unrelated inputs or expanding the task into a Pages update.
 
 Write `blueprint.description` for users deciding whether to use the blueprint,
 not as a complete behavior specification or development status report. In 1–3
-short sentences, introduce its purpose, source and target devices, supported
-integrations, and any prerequisite essential to using it. Do not enumerate all
+short sentences, introduce its purpose, source and target devices, and any
+prerequisite essential to using it. Keep platform support summaries in the
+manual compatibility data rather than repeating them in blueprint descriptions. Do not enumerate all
 triggers, refresh intervals, mode transitions, validation rules, or error paths.
 Mention a behavior only when it helps explain the blueprint's main purpose.
 

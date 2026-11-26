@@ -1,4 +1,5 @@
 ---
+import BlueprintCompatibility from './BlueprintCompatibility.astro';
 import PageTitle from '@astrojs/starlight/components/PageTitle.astro';
 
 const { blueprint } = Astro.locals.starlightRoute.entry.data;
@@ -23,3 +24,5 @@ const raw = 'https://raw.githubusercontent.com/viys/home-assistant-blueprints';
     </details>
   </nav>
 )}
+
+{blueprint && <BlueprintCompatibility blueprint={blueprint} />}

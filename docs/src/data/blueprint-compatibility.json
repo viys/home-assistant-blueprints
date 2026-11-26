@@ -1,0 +1,117 @@
+{
+  "remote_source_link_snzb02dr2": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_average_link_tp_wgzba": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_average_link_trvzb": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_average_link_trvzbt": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_link_tp_wgzba": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_link_trv_zbl": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_link_trvzb": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_link_trvzbt": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_sources_link_tp_wgzba": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ],
+    "note": "Up to three sources require compatible firmware and a ZHA quirk or Zigbee2MQTT converter; older versions support source 1 only."
+  },
+  "trv_target_temperature_link_tp_wgzba": {
+    "columns": [
+      "TP-WGZBA (source)",
+      "TRV (target)"
+    ],
+    "zha": [
+      "supported",
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported",
+      "not_supported"
+    ],
+    "note": "TRV model availability depends on the imported blueprint version. Check the stable YAML before using a newly added model."
+  }
+}
