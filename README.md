@@ -70,8 +70,6 @@ Select a device to browse and import its blueprints.
 <details>
 <summary><strong>TRV-ZBT</strong></summary>
 
-Synchronize one external temperature source, or average multiple sources and send the result to one or more valves.
-
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
 | **Sync Remote Temperature to TRV-ZBT** | <a href="https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fviys%2Fhome-assistant-blueprints%2Fblob%2Fmaster%2Fautomation%2Fsonoff%2Fremote_temperature_link_trvzbt.yaml"><img src="https://my.home-assistant.io/badges/blueprint_import.svg" alt="Import blueprint" height="28"></a> | [Raw YAML](https://raw.githubusercontent.com/viys/home-assistant-blueprints/master/automation/sonoff/remote_temperature_link_trvzbt.yaml) | [Raw YAML](https://raw.githubusercontent.com/viys/home-assistant-blueprints/dev/automation/sonoff/remote_temperature_link_trvzbt.yaml) |
