@@ -21,6 +21,9 @@ def fanout(source_integration="zha", targets=None):
             ("trvzb", "zha", "TRVZB", "SONOFF"), ("mqtt", "mqtt", "TRV-ZBL", "SONOFF"),
             ("foreign", "zha", "TRV-ZBL", "OTHER")):
         run.devices[device] = dict(manufacturer=manufacturer, model=model, identifiers=[(integration, f"ieee-{device}")])
+    run.entity_map["trvzb"] = ["switch.valve_panel_target_temperature_linkage",
+                                "number.valve_panel_linked_target_temperature"]
+    run.set_state("switch.valve_panel_target_temperature_linkage", "on")
     return run
 
 
@@ -28,7 +31,7 @@ class TargetTemperatureTests(unittest.TestCase):
     """Verify target changes, supported destinations, boundary values, and logging."""
 
     def test_changed_target_forwards_supported_devices_and_logs_skips(self):
-        """Forward to ZHA ZBL/ZBT only, preserving target order and encoded values."""
+        """Forward to all supported ZHA models with their respective write paths."""
         # Source integration does not affect the selected climate event's payload.
         for integration in ("zha", "mqtt"):
             run = fanout(integration)
@@ -41,11 +44,54 @@ class TargetTemperatureTests(unittest.TestCase):
                 self.assertEqual(call["data"], dict(ieee=call["data"]["ieee"], endpoint_id=1,
                                  cluster_id=0xFC11, cluster_type="in", attribute=0xFF01, value=2150))
             logs = [call["data"] for call in run.calls if call["action"] == "system_log.write"]
-            self.assertEqual([log["level"] for log in logs], ["info", "info", "warning", "warning", "warning"])
+            self.assertEqual([log["level"] for log in logs], ["info", "info", "info", "warning", "warning"])
+            numbers = [call for call in run.calls if call["action"] == "number.set_value"]
+            self.assertEqual(len(numbers), 1)
+            self.assertEqual(numbers[0]["target"]["entity_id"], "number.valve_panel_linked_target_temperature")
+            self.assertEqual(numbers[0]["data"]["value"], 21.5)
             self.assertIn("climate.panel", logs[0]["message"])
             self.assertIn("21.5", logs[0]["message"])
-            for device, log in zip(("trvzb", "mqtt", "foreign"), logs[2:]):
+            for device, log in zip(("mqtt", "foreign"), logs[3:]):
                 self.assertIn(device, log["message"])
+
+    def test_trvzb_names_bounds_and_linkage_gate(self):
+        """Use old/new numbered names; never send a target to disabled linkage."""
+        for switch, number in (
+                ("switch.room_panel_target_temperature_linkage", "number.room_panel_linked_target_temperature"),
+                ("switch.room_panel_linkage_2", "number.room_panel_linkage_target_temperature_2")):
+            for state, temperature, expected in (("on", 5, True), ("on", 30, True),
+                                                  ("on", 4.9, False), ("on", 30.1, False),
+                                                  ("off", 20, False), ("unavailable", 20, False)):
+                with self.subTest(switch=switch, state=state, temperature=temperature):
+                    run = fanout(targets=["trvzb"])
+                    run.entity_map["trvzb"] = [switch, number]
+                    run.set_state(switch, state)
+                    run.fire("source_target_temperature_changed", entity="climate.panel",
+                             old_state={"attributes": {"temperature": 19}},
+                             new_state={"attributes": {"temperature": temperature}})
+                    writes = [call for call in run.calls if call["action"] == "number.set_value"]
+                    self.assertEqual(len(writes), int(expected))
+                    if expected:
+                        self.assertEqual(writes[0]["target"]["entity_id"], number)
+                        self.assertEqual(writes[0]["data"]["value"], temperature)
+
+    def test_trvzb_missing_ambiguous_entities_and_mqtt_are_skipped(self):
+        """Fail closed on ambiguous discovery and unsupported MQTT TRVZB targets."""
+        for entities, integration in (([], "zha"),
+                (["switch.a_panel_linkage", "number.a_panel_linked_target_temperature",
+                  "number.b_panel_linked_target_temperature"], "zha"),
+                (["switch.valve_panel_target_temperature_linkage",
+                  "number.valve_panel_linked_target_temperature"], "mqtt")):
+            run = fanout(targets=["trvzb", "zbt"])
+            run.entity_map["trvzb"] = entities
+            run.devices["trvzb"]["identifiers"] = [(integration, "ieee-trvzb")]
+            run.set_state("switch.a_panel_linkage", "on")
+            run.fire("source_target_temperature_changed", entity="climate.panel",
+                     old_state={"attributes": {"temperature": 19}},
+                     new_state={"attributes": {"temperature": 20}})
+            self.assertFalse(any(call["action"] == "number.set_value" for call in run.calls))
+            self.assertEqual(run.calls[0]["data"]["level"], "warning")
+            self.assertEqual(run.calls[1]["data"]["ieee"], "ieee-zbt")
 
     def test_temperature_bounds_rounding_and_empty_target_list(self):
         """Validate inclusive 5–30°C targets and centidegree rounding."""

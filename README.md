@@ -82,6 +82,8 @@ Synchronize one external temperature source, or average multiple sources and sen
 <details>
 <summary><strong>TRVZB</strong></summary>
 
+To follow a panel setpoint through ZHA, see [Link TP-WGZBA Target Temperature to TRVs](https://viys.github.io/home-assistant-blueprints/blueprints/tp-wgzba/trv_target_temperature_link_tp_wgzba/).
+
 | Blueprint | Import | Links | Dev links |
 | --- | --- | --- | --- |
 | **Sync Remote Temperature to TRVZB** | <a href="https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fviys%2Fhome-assistant-blueprints%2Fblob%2Fmaster%2Fautomation%2Fsonoff%2Fremote_temperature_link_trvzb.yaml"><img src="https://my.home-assistant.io/badges/blueprint_import.svg" alt="Import blueprint" height="28"></a> | [Raw YAML](https://raw.githubusercontent.com/viys/home-assistant-blueprints/master/automation/sonoff/remote_temperature_link_trvzb.yaml) | [Raw YAML](https://raw.githubusercontent.com/viys/home-assistant-blueprints/dev/automation/sonoff/remote_temperature_link_trvzb.yaml) |

@@ -5,7 +5,9 @@ blueprint:
     Synchronizes the target temperature of a SONOFF TP-WGZBA thermostat
     connected through ZHA or Zigbee2MQTT with one or more SONOFF TRVs. Each
     change to the thermostat's target temperature is forwarded to the selected
-    ZHA TRV-ZBL or TRV-ZBT valves; other selected valves are skipped.
+    ZHA TRV-ZBL, TRV-ZBT, or TRVZB valves; TRVZB requires panel target
+    temperature linkage to be enabled. Zigbee2MQTT target valves and other
+    selected valves are skipped.
   domain: automation
   homeassistant:
     min_version: 2025.4.0
@@ -27,7 +29,7 @@ blueprint:
 
     target_trvs:
       name: SONOFF TRV devices
-      description: Select one or more SONOFF TRVs. ZHA TRV-ZBL and TRV-ZBT devices are forwarded; other selected models are logged and skipped.
+      description: Select one or more SONOFF TRVs. ZHA TRV-ZBL, TRV-ZBT, and TRVZB devices are forwarded. Enable panel target temperature linkage on TRVZB first. Zigbee2MQTT targets and other selected models are logged and skipped.
       selector:
         device:
           multiple: true
@@ -92,7 +94,39 @@ actions:
                   {{ identifier[1] }}
                 {%- endif -%}
               {%- endfor %}
+            trvzb_linkage_switch: >
+              {% set matches = (device_entities(target_device) or [])
+                 | select('match', '^switch[.].*_(panel_target_temperature_linkage|panel_linkage)(?:_[0-9]+)?$')
+                 | list %}
+              {{ matches[0] if matches | count == 1 else '' }}
+            trvzb_linkage_target: >
+              {% set matches = (device_entities(target_device) or [])
+                 | select('match', '^number[.].*_(panel_linked_target_temperature|panel_linkage_target_temperature)(?:_[0-9]+)?$')
+                 | list %}
+              {{ matches[0] if matches | count == 1 else '' }}
         - choose:
+            - conditions:
+                - condition: template
+                  value_template: >
+                    {{ target_integration | trim == 'zha'
+                       and device_attr(target_device, 'manufacturer') == 'SONOFF'
+                       and device_attr(target_device, 'model') == 'TRVZB'
+                       and trvzb_linkage_target | trim != ''
+                       and is_state(trvzb_linkage_switch | trim, 'on')
+                       and 500 <= target_temperature_x100 | int <= 3000 }}
+              sequence:
+                - action: number.set_value
+                  target:
+                    entity_id: "{{ trvzb_linkage_target | trim }}"
+                  data:
+                    value: "{{ target_temperature_x100 | int / 100 }}"
+                - action: system_log.write
+                  data:
+                    level: info
+                    message: >
+                      TP-WGZBA target-temperature forward: {{ source_climate | trim }}
+                      -> {{ target_device }}, {{ target_temperature_x100 | int / 100 }} °C
+                      via ZHA panel linked target temperature.
             - conditions:
                 - condition: template
                   value_template: >
@@ -125,6 +159,6 @@ actions:
                 level: warning
                 message: >
                   TP-WGZBA target-temperature forward skipped: {{ target_device }}
-                  is not a supported ZHA SONOFF TRV-ZBL/TRV-ZBT target yet.
+                  is unsupported, outside the 5–30 °C range, or has TRVZB panel linkage disabled or unavailable.
 
 mode: restart
