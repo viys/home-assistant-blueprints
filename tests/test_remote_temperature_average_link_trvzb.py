@@ -404,11 +404,11 @@ class SourceNotificationTests(unittest.TestCase):
                     run.fire("periodic_sync")
                     alert = run.calls[0]
                     self.assertEqual(alert["action"], "persistent_notification.create")
-                    self.assertEqual(alert["data"]["title"], "TRVZB temperature source warning")
-                    self.assertIn(reason, alert["data"]["message"])
-                    self.assertIn("sensor.source", alert["data"]["message"])
-                    if reason == "expired":
-                        self.assertIn("60 minutes", alert["data"]["message"])
+                    self.assertEqual(alert["data"]["title"], "TRVZB remote temperature alert")
+                    name = "sensor.source" if state is None or reason == "expired" else "Bedroom"
+                    text = ("No temperature change for 60 minutes." if reason == "expired"
+                            else "Invalid temperature." if reason == "invalid" else "Unavailable.")
+                    self.assertEqual(alert["data"]["message"], f"- {name} — {text}")
                     self.assertEqual(run.calls[-1]["data"]["value"], 25)
 
     def test_all_sources_expire_same_ids_are_reused_and_recovery_clears(self):
@@ -470,8 +470,8 @@ class SourceNotificationTests(unittest.TestCase):
         run.clock += timedelta(seconds=1)
         run.fire("periodic_sync")
         self.assertEqual(len(run.calls), 1)
-        self.assertIn("expired", run.calls[0]["data"]["message"])
-        self.assertIn("1 minute.", run.calls[0]["data"]["message"])
+        self.assertEqual(run.calls[0]["data"]["message"],
+                         "- sensor.source — No temperature change for 1 minute.")
 
     def test_offline_transition_and_recovery_use_sensor_name_and_same_notification(self):
         """Source events show the affected sensor and clear only its alert on recovery."""
@@ -483,7 +483,7 @@ class SourceNotificationTests(unittest.TestCase):
         new = run.set_state("sensor.source", "unavailable", "°C", friendly_name="Bedroom sensor")
         run.dispatch_state("sensor.source", old, new)
         alert = run.calls[0]
-        self.assertIn("Bedroom sensor", alert["data"]["message"])
+        self.assertEqual(alert["data"]["message"], "- Bedroom sensor — Unavailable.")
         run.calls.clear()
         recovered = run.set_state("sensor.source", "20", "°C", friendly_name="Bedroom sensor")
         run.dispatch_state("sensor.source", new, recovered)

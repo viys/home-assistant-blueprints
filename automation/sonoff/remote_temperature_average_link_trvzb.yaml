@@ -150,20 +150,22 @@ actions:
                     continue_on_error: true
                     data:
                       notification_id: "{{ notification_id }}"
-                      title: "TRVZB temperature source warning"
-                      message: |
-                        The following temperature sources are excluded from the average:
+                      title: "TRVZB remote temperature alert"
+                      message: >
+                        {% set ns = namespace(lines=[]) %}
                         {% for issue in source_issues %}
-                        - {{ state_attr(issue.entity, 'friendly_name') or issue.entity }} ({{ issue.entity }}): {{ issue.reason }}.
-                        {% if issue.reason == 'expired' %}
-                          The temperature has not changed for at least {{ source_timeout }} {{ 'minute' if source_timeout | float == 1 else 'minutes' }}. Repeated identical readings do not renew the validity period.
-                        {% elif issue.reason == 'invalid' %}
-                          The sensor does not provide a numeric temperature in Celsius, Fahrenheit, or Kelvin.
-                        {% else %}
-                          The sensor is unavailable or has no known temperature.
-                        {% endif %}
+                          {% if issue.reason == 'expired' %}
+                            {% set reason = 'No temperature change for ' ~ source_timeout ~
+                               (' minute.' if source_timeout | float == 1 else ' minutes.') %}
+                          {% elif issue.reason == 'invalid' %}
+                            {% set reason = 'Invalid temperature.' %}
+                          {% else %}
+                            {% set reason = 'Unavailable.' %}
+                          {% endif %}
+                          {% set ns.lines = ns.lines + ['- ' ~
+                             (state_attr(issue.entity, 'friendly_name') or issue.entity) ~ ' — ' ~ reason] %}
                         {% endfor %}
-                        Synchronization continues with the remaining valid sources and stops if none remain.
+                        {{ ns.lines | join('\n') }}
             default:
               - action: persistent_notification.dismiss
                 continue_on_error: true
