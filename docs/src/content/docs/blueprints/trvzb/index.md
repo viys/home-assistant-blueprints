@@ -15,7 +15,14 @@ Use an external room sensor or an average of several readings with one or more T
 | Use one room reading | 1 sensor → 1+ valves | No averaging | [One temperature source](./remote_temperature_link_trvzb/) |
 | Combine room readings | 1+ sensors → 1+ valves | Equal-weight average in HA | [Average temperature](./remote_temperature_average_link_trvzb/) |
 
-Both support **ZHA and Zigbee2MQTT**, including mixed targets in one automation.
+Both temperature-source blueprints support **ZHA and Zigbee2MQTT**, including mixed targets in one automation.
+
+## Follow a panel target
+
+To follow a TP-WGZBA target setpoint, use [Link target temperature](../tp-wgzba/trv_target_temperature_link_tp_wgzba/).
+TRVZB targets currently support **ZHA only**, with a compatible linkage firmware
+and quirk. Enable **Panel target temperature linkage** on each valve first.
+This forwards target setpoints rather than measured room temperatures.
 
 ## Using multiple valves
 
