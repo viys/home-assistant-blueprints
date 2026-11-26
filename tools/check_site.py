@@ -1,6 +1,7 @@
 """Check the built manual's local links, anchors, images, and stable import targets."""
 
 import argparse
+import re
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
@@ -66,8 +67,8 @@ def check_site(root, baseurl="/home-assistant-blueprints"):
 
 
 def main():
-    """Validate the artifact and compare its import buttons with the actual YAML files."""
-    # Check generated buttons as a set so stale, missing, or duplicate guides fail CI.
+    """Validate the artifact and import buttons for the guides included in Pages."""
+    # Check generated buttons against published guides, independently of YAML coverage.
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("site", type=Path)
     parser.add_argument("--baseurl", default="/home-assistant-blueprints")
@@ -81,10 +82,18 @@ def main():
             if url.netloc == "my.home-assistant.io":
                 imports.extend(parse_qs(url.query).get("blueprint_url", []))
     repository = Path(__file__).resolve().parents[1]
-    expected = {f"https://github.com/viys/home-assistant-blueprints/blob/master/automation/sonoff/{p.name}"
-                for p in (repository / "automation/sonoff").glob("*.yaml")}
+    expected = set()
+    # Pages coverage is optional; only published guides require import buttons.
+    for guide in (repository / "docs/src/content/docs/blueprints").rglob("*.md"):
+        front_matter = guide.read_text(encoding="utf-8").split("---", 2)[1]
+        if re.search(r"(?m)^blueprint:\s", front_matter):
+            blueprint = Path("automation/sonoff") / f"{guide.stem}.yaml"
+            if not (repository / blueprint).is_file():
+                errors.append(f"{guide.relative_to(repository)}: missing import target: {blueprint.as_posix()}")
+            expected.add("https://github.com/viys/home-assistant-blueprints/blob/master/"
+                         f"automation/sonoff/{guide.stem}.yaml")
     if set(imports) != expected or len(imports) != len(expected):
-        errors.append("Built import buttons must match every current blueprint exactly once (master only).")
+        errors.append("Built import buttons must match every published guide exactly once (master only).")
     if not (args.site / "pagefind/pagefind.js").is_file():
         errors.append("Missing built search index runtime: pagefind/pagefind.js")
     if errors:

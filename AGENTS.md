@@ -22,7 +22,7 @@ git diff --check                 # detect whitespace errors
 Get-Content automation/sonoff/<blueprint>.yaml
 ```
 
-For documentation or site changes, also build and check the production site:
+For Pages manual or site changes, also build and check the production site:
 
 ```powershell
 npm ci --prefix docs
@@ -57,9 +57,10 @@ Import the changed blueprint into a Home Assistant test instance, create an auto
 
 Every blueprint using `model_id` in a device selector must declare
 `blueprint.homeassistant.min_version` of at least `2025.4.0`. Preserve any
-higher minimum required by other features. Keep the matching guide and device
-overview synchronized. The offline version guard checks this known
-feature boundary; it does not replace validation in the declared HA version.
+higher minimum required by other features. When a Pages update is requested,
+keep the affected guide and device overview synchronized. The offline version
+guard checks this known feature boundary; it does not replace validation in
+the declared HA version.
 
 Use two-space indentation, never tabs. Preserve the existing Home Assistant blueprint layout: `blueprint`, `variables`, `triggers`, `conditions`, `actions`, then `mode`. Use descriptive snake_case filenames and blueprint input/variable IDs, such as `remote_temperature_link_tp_wgzba.yaml` and `source_temperature`. Keep human-facing labels concise and explain device, integration, units, and optional behavior in descriptions. Avoid unrelated reformatting.
 
@@ -70,6 +71,32 @@ Keep `blueprint.description` consistent across all blueprints from the same auth
 Describe only what the blueprint supports and does for the user. Do not leak implementation details such as entity IDs, Zigbee cluster or attribute IDs, quirk frame formats, or firmware leases.
 
 ## Documentation and Link Integrity
+
+### Scope of website and SVG requirements
+
+Apply the website rules in this file and `docs/MAINTAINING.md` when the user
+requests work on the GitHub Pages manual. Adding, modifying, renaming, merging,
+or removing a blueprint, including fixing a bug, does not by itself require
+creating or updating Pages guides, overviews, navigation, or SVGs. Do not expand
+a blueprint task into a Pages update unless the user requests it. A new blueprint
+may be submitted with only its YAML and matching dedicated unit test file;
+README catalogue entries, Pages guides, and SVGs are optional separate work.
+
+After changing a blueprint, check whether its existing Pages content has become
+outdated. If so, briefly tell the user which pages or explanations lag behind
+in the result summary. This is informational: do not automatically update
+Pages, require approval to leave it unchanged, or block the blueprint submission.
+For a new blueprint without a Pages entry, no page needs to be created.
+Existing Pages import links must reference YAML files present in the repository;
+optional Pages coverage does not waive checks for missing import targets.
+
+Within a requested Pages update, keep accurate pages and SVGs unchanged. The
+`svg-diagram` skill is required only when actually adding or modifying an SVG;
+editing Markdown, MDX, styles, or site configuration alone does not require it.
+The AI performing SVG work must load and follow the skill itself; do not ask
+the user to invoke the skill or generate the diagram. If the skill is missing,
+report that limitation and continue independent bug-fix and documentation work;
+identify any required SVG update that remains incomplete.
 
 ### Required skill for SVG work
 
@@ -97,33 +124,28 @@ for the shared illustration conventions.
 
 ### Synchronization and links
 
-Keep documentation synchronized throughout development, in the same change as
-the implementation. A blueprint or script change is incomplete until affected
-documentation has been reviewed and updated; do not defer it to a later task or
-wait for the user to request it. Complete this check before requesting review
-or committing. If a change has no documentation impact, explain why in the
-change summary or PR description instead of making unrelated documentation edits.
-
-For blueprint changes, check the YAML metadata and input descriptions, matching
-Markdown guide and SVG, device overview, selection homepage, README catalogue,
-and corresponding tests. Update every affected explanation of inputs, defaults,
+For requested Pages updates, check the affected Markdown guide and SVG, device
+overview, selection homepage, and navigation against the current blueprint.
+Update every affected explanation of inputs, defaults,
 units, source/target counts, integration and firmware support, triggers,
 timeouts, invalid-source handling, and examples. Distinguish ZHA from
 Zigbee2MQTT behavior and device-side averaging from averaging in Home Assistant.
 Keep claims grounded in the current implementation and identify unverified
 Home Assistant or hardware behavior accurately.
 
-Every blueprint must have exactly one dedicated Markdown guide and one SVG
-using its YAML filename stem. Set the guide's `blueprint` front matter to that
+When adding a blueprint to Pages, provide exactly one dedicated Markdown guide
+and one SVG using its YAML filename stem. Blueprints not yet included in Pages
+do not require either file. Set the guide's `blueprint` front matter to that
 stem and its `title` to `blueprint.name`; the shared component derives import
 and download links from it. When adding, renaming, merging, or removing a
-blueprint, update its guides, diagrams, navigation, catalogue links, and tests
-in the same change. Remove obsolete documentation and preserve applicable
-instructions when merging guides.
+blueprint as part of a requested Pages update, update its affected guides,
+diagrams, navigation, and site links in the same change. Remove obsolete
+documentation and preserve applicable instructions when merging guides.
 
 For tooling, validation, or publishing script changes, update affected command
-examples, prerequisites, paths, and workflow instructions in `AGENTS.md`,
-`docs/MAINTAINING.md`, and other relevant documentation in the same change.
+examples, prerequisites, paths, and workflow instructions in `AGENTS.md`
+and other relevant documentation in the same change. Update
+`docs/MAINTAINING.md` when the change affects site tooling or publishing.
 
 Keep `README.md` focused on the repository overview, common import/re-import instructions, and the blueprint catalogue, with links to the manual. Keep concise blueprint-specific requirements and supported behavior in the YAML metadata and input descriptions; put illustrated setup steps and examples in the manual. Track unresolved defects and implementation limitations in GitHub Issues. Do not maintain a separate project-level test README; describe test scenarios and limitations in the relevant test names and comments. Do not add per-blueprint troubleshooting, pending-work lists, or issue status paragraphs to the root README.
 
@@ -133,12 +155,19 @@ guides. The homepage's **Find your device** section may name devices; its other
 sections and the shared getting-started, updating, checking, and 404 pages
 should link to the relevant guides instead of listing model-specific details.
 
-Use the same short, action-oriented name in the README catalogue and in
+When adding or updating a README catalogue entry, use the same short,
+action-oriented name as
 `blueprint.name`. Follow the existing action-and-device naming pattern. Do not
 use parentheses or append explanations to blueprint names. Put source limits,
 integration details, and behavior in the blueprint description.
 
-Every new blueprint needs a matching entry in `README.md` with its summary, stable `master` import badge and raw-download link, plus a `dev` raw-download link. Do not add a `dev` import badge. When adding, moving, renaming, or deleting a file, update every affected relative and GitHub URL in the README in the same change. Verify each path segment, branch, and URL-encoded `blueprint_url` points to the final filename; do not leave stale links behind.
+Adding a blueprint does not require a README catalogue entry. When the user
+requests adding or updating an entry, include its summary, stable `master`
+import badge and raw-download link, plus a `dev` raw-download link. Do not add
+a `dev` import badge. Verify each path segment, branch, and URL-encoded
+`blueprint_url` points to the intended filename. When renaming or deleting a
+file already linked from the README, update or remove those affected links
+in the same change so existing entries do not break.
 
 ## Commits & Pull Requests
 
@@ -149,4 +178,4 @@ validation jobs, reject divergent or non-linear release ranges, and recheck
 the baseline before updating the remote. See `docs/RELEASING.md` for repository
 rules and tag creation. Never create or push a real release tag as a test.
 
-Use short, imperative Conventional Commit-style subjects, for example `feat: add TRV temperature sync blueprint` or `docs: fix blueprint import links`. Keep each commit focused. Pull requests should state the supported device and integrations, describe behavior changes and synchronized documentation, link related issues when applicable, and include the Home Assistant version used for manual validation or state that manual validation was not performed. Include screenshots only when a UI-facing documentation change benefits from one.
+Use short, imperative Conventional Commit-style subjects, for example `feat: add TRV temperature sync blueprint` or `docs: fix blueprint import links`. Keep each commit focused. Pull requests should state the supported device and integrations, describe behavior changes and any requested Pages updates, link related issues when applicable, and include the Home Assistant version used for manual validation or state that manual validation was not performed. Include screenshots only when a UI-facing documentation change benefits from one.

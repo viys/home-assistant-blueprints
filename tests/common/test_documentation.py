@@ -1,13 +1,16 @@
 """Check the manual's source mapping and publishing boundary without a web browser."""
 
+from contextlib import redirect_stdout
+import io
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
 import yaml
 
-from tests.common.test_common import BlueprintLoader
+from tools import check_site as site_checker
 from tools.check_site import check_site
 
 
@@ -16,10 +19,10 @@ DOCS = ROOT / "docs"
 
 
 class DocumentationTests(unittest.TestCase):
-    """Keep guide names, inputs, illustrations, and catalogue links aligned."""
+    """Check published guides and assets without requiring Pages coverage of every blueprint."""
 
-    def test_every_blueprint_has_one_matching_markdown_guide_and_svg(self):
-        """Catch missing guides and stale blueprint names or input labels."""
+    def test_published_guides_have_matching_svg_and_metadata(self):
+        """Validate existing Pages entries independently of blueprint-only changes."""
         # Front matter is the mapping used by the site's shared import-button component.
         guides = {}
         for path in (DOCS / "src/content/docs/blueprints").rglob("*.md"):
@@ -30,30 +33,20 @@ class DocumentationTests(unittest.TestCase):
             stem = metadata["blueprint"]
             self.assertNotIn(stem, guides)
             guides[stem] = (path, metadata, text)
-        blueprints = list((ROOT / "automation/sonoff").glob("*.yaml"))
-        self.assertEqual(set(guides), {path.stem for path in blueprints})
         self.assertEqual({path.stem for path in (DOCS / "public/diagrams").glob("*.svg")}, set(guides))
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("https://viys.github.io/home-assistant-blueprints/", readme)
         ns = {"svg": "http://www.w3.org/2000/svg"}
-        for blueprint in blueprints:
-            with self.subTest(blueprint=blueprint.name):
-                path, metadata, text = guides[blueprint.stem]
-                data = yaml.load(blueprint.read_text(encoding="utf-8"), Loader=BlueprintLoader)["blueprint"]
-                self.assertEqual(metadata["title"], data["name"])
-                self.assertEqual(path.stem, blueprint.stem)
-                minimum = data.get("homeassistant", {}).get("min_version")
-                self.assertIsNotNone(minimum)
-                self.assertIn(f"**{minimum} or later**", text)
-                for value in data["input"].values():
-                    self.assertIn(value["name"], text)
-                self.assertIn(data["name"], readme)
-                svg = ET.parse(DOCS / "public/diagrams" / f"{blueprint.stem}.svg").getroot()
+        for stem, (path, metadata, text) in guides.items():
+            with self.subTest(guide=stem):
+                self.assertTrue(metadata.get("title"))
+                self.assertEqual(path.stem, stem)
+                svg = ET.parse(DOCS / "public/diagrams" / f"{stem}.svg").getroot()
                 self.assertIn("viewBox", svg.attrib)
                 self.assertIsNotNone(svg.find("svg:title", ns))
                 self.assertIsNotNone(svg.find("svg:desc", ns))
                 self.assertFalse(svg.findall(".//svg:script", ns))
-                self.assertIn(f"{blueprint.stem}.svg", text)
+                self.assertIn(f"{stem}.svg", text)
 
     def test_both_branches_publish_but_prs_remain_read_only(self):
         """Build once through the reusable job and publish one shared branch site."""
@@ -68,6 +61,40 @@ class DocumentationTests(unittest.TestCase):
         self.assertEqual(workflow["jobs"]["build"]["uses"], "./.github/workflows/manual-build.yml")
         self.assertEqual(deploy["needs"], "build")
         self.assertEqual(deploy["permissions"], {"pages": "write", "id-token": "write"})
+
+    def test_import_target_must_exist_but_unpublished_blueprints_are_allowed(self):
+        """Reject a guide with a missing YAML while allowing YAML without a guide."""
+        # Exercise the CLI against an isolated repository and a matching rendered import button.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            guides = root / "docs/src/content/docs/blueprints"
+            guides.mkdir(parents=True)
+            (guides / "example.md").write_text(
+                "---\nblueprint: example\ntitle: Example\n---\n", encoding="utf-8")
+            site = root / "dist"
+            (site / "pagefind").mkdir(parents=True)
+            (site / "pagefind/pagefind.js").write_text("", encoding="utf-8")
+            (site / "index.html").write_text(
+                '<a href="https://my.home-assistant.io/redirect/blueprint_import/?'
+                'blueprint_url=https%3A%2F%2Fgithub.com%2Fviys%2Fhome-assistant-blueprints'
+                '%2Fblob%2Fmaster%2Fautomation%2Fsonoff%2Fexample.yaml">Import</a>', encoding="utf-8")
+            with patch.object(site_checker, "__file__", str(root / "tools/check_site.py")), \
+                    patch("sys.argv", ["check_site.py", str(site)]):
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    self.assertEqual(site_checker.main(), 1)
+                self.assertIn("automation/sonoff/example.yaml", output.getvalue())
+                self.assertIn("missing", output.getvalue())
+
+                blueprints = root / "automation/sonoff"
+                blueprints.mkdir(parents=True)
+                (blueprints / "example.yaml").write_text("blueprint: {}\n", encoding="utf-8")
+                with redirect_stdout(io.StringIO()):
+                    self.assertEqual(site_checker.main(), 0)
+
+                (blueprints / "unpublished.yaml").write_text("blueprint: {}\n", encoding="utf-8")
+                with redirect_stdout(io.StringIO()):
+                    self.assertEqual(site_checker.main(), 0)
 
     def test_rendered_checker_handles_base_paths_fragments_and_missing_assets(self):
         """Exercise real URL resolution and failure reporting using a tiny artifact."""
