@@ -7,12 +7,20 @@ blueprint:
     The average is applied while external temperature mode is enabled, on source updates,
     startup, automation reload, and every minute. Unavailable, invalid, and
     expired sources are excluded. When all sources are excluded, synchronization
-    stops until a valid source returns. Temperature values in Celsius,
+    stops until a valid source returns. Optional English notifications identify
+    unavailable, invalid, or expired temperature sources and clear when valid readings return.
+    Temperature values in Celsius,
     Fahrenheit, or Kelvin are automatically converted to Celsius.
   domain: automation
   homeassistant:
     min_version: 2025.4.0
   input:
+    notify_source_offline:
+      name: Notify when a temperature source is unavailable, invalid, or expired
+      description: Show English notifications in Home Assistant for selected external sensors that are unavailable, unknown, missing, invalid, or past the temperature validity period. Repeated identical readings and attribute updates do not renew validity. One notification per automation lists all affected sources and updates at each check. Removed or recovered sources disappear from the list. The notification clears when no issues remain or when notifications are disabled and the automation reloads. Dismissed alerts may reappear at the next check while the problem remains. Notifications do not send phone push messages. Disabled by default.
+      default: false
+      selector:
+        boolean:
     target_device:
       name: TRVZB devices
       description: Select one or more ZHA or Zigbee2MQTT radiator valves and enable their external temperature mode. Use a compatible ZHA quirk or Zigbee2MQTT converter. Use only one temperature synchronization automation per valve. Unavailable or failed valves do not prevent updates to the others.
@@ -49,6 +57,7 @@ blueprint:
             device_class: temperature
 
 variables:
+  notify_source_offline: !input notify_source_offline
   target_device: !input target_device
   # Existing automations can still supply a single device ID.
   target_devices: "{{ ([target_device] if target_device is string else target_device) | unique | list }}"
@@ -102,6 +111,64 @@ conditions:
                       and is_number(trigger.event.data.new_state.state)))) }}
 
 actions:
+  # One automation-owned summary can be replaced after sources are removed.
+  # Reload also clears existing alerts when the notification option is disabled.
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ notify_source_offline or trigger.id == 'automation_reloaded' }}"
+        sequence:
+          - variables:
+              notification_id: "{{ this.entity_id ~ '_temperature_sources' }}"
+              source_issues: >
+                {% set ns = namespace(issues=[]) %}
+                {% set current_time = now() %}
+                {% for entity in source_entities | unique | list if notify_source_offline %}
+                  {% if entity not in target_entities %}
+                    {% set source = states[entity] %}
+                    {% set reason = '' %}
+                    {% if source is none or source.state in ['unknown', 'unavailable'] %}
+                      {% set reason = 'unavailable' %}
+                    {% elif not is_number(source.state)
+                            or state_attr(entity, 'unit_of_measurement') not in ['°C', '°F', 'K'] %}
+                      {% set reason = 'invalid' %}
+                    {% elif (current_time - source.last_changed).total_seconds() >= source_timeout | float * 60 %}
+                      {% set reason = 'expired' %}
+                    {% endif %}
+                    {% if reason != '' %}
+                      {% set ns.issues = ns.issues + [dict(entity=entity, reason=reason)] %}
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+                {{ ns.issues }}
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ source_issues | count > 0 }}"
+                sequence:
+                  - action: persistent_notification.create
+                    continue_on_error: true
+                    data:
+                      notification_id: "{{ notification_id }}"
+                      title: "TRVZB temperature source warning"
+                      message: |
+                        The following temperature sources are excluded from the average:
+                        {% for issue in source_issues %}
+                        - {{ state_attr(issue.entity, 'friendly_name') or issue.entity }} ({{ issue.entity }}): {{ issue.reason }}.
+                        {% if issue.reason == 'expired' %}
+                          The temperature has not changed for at least {{ source_timeout }} {{ 'minute' if source_timeout | float == 1 else 'minutes' }}. Repeated identical readings do not renew the validity period.
+                        {% elif issue.reason == 'invalid' %}
+                          The sensor does not provide a numeric temperature in Celsius, Fahrenheit, or Kelvin.
+                        {% else %}
+                          The sensor is unavailable or has no known temperature.
+                        {% endif %}
+                        {% endfor %}
+                        Synchronization continues with the remaining valid sources and stops if none remain.
+            default:
+              - action: persistent_notification.dismiss
+                continue_on_error: true
+                data:
+                  notification_id: "{{ notification_id }}"
   - variables:
       valid_temperatures: >
         {% set ns = namespace(values=[]) %}
