@@ -83,7 +83,8 @@ Write `blueprint.description` for users deciding whether to use the blueprint,
 not as a complete behavior specification or development status report. In 1–3
 short sentences, introduce its purpose, source and target devices, and any
 prerequisite essential to using it. Keep platform support summaries in the
-manual compatibility data rather than repeating them in blueprint descriptions. Do not enumerate all
+manual compatibility data rather than repeating them in blueprint descriptions.
+Do not enumerate all
 triggers, refresh intervals, mode transitions, validation rules, or error paths.
 Mention a behavior only when it helps explain the blueprint's main purpose.
 
@@ -105,6 +106,20 @@ in the blueprint's dedicated tests to check naming variants and event filters.
 Numbering-only cases do not verify localization; test invalid/ambiguous entities separately.
 
 ## Documentation and Link Integrity
+
+### Blueprint compatibility presentation
+
+For each published blueprint guide, use the shared compatibility table and
+central JSON metadata described in `docs/MAINTAINING.md` (Compatibility table
+design). Preserve the compact Integration / Status layout, original-color
+28 px circular ZHA and Zigbee2MQTT logos, and labeled circular status indicators.
+Use role-specific columns where source and target support differs. Keep the
+site light, maintain mobile readability, and do not duplicate the table in
+individual guides or platform-support summaries in blueprint descriptions.
+When changing compatibility or its presentation, update the central data or
+shared component, run the metadata tests and production build, and verify the
+rendered logos and table at desktop and mobile widths.
+
 
 ### Scope of website and SVG requirements
 
