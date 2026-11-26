@@ -2,14 +2,9 @@ blueprint:
   name: "Link TP-WGZBA Target Temperature to TRVs"
   author: Sonoff
   description: >
-    Synchronizes the target temperature of a SONOFF TP-WGZBA thermostat
-    connected through ZHA or Zigbee2MQTT with one or more SONOFF TRVs. Each
-    change to the thermostat's target temperature is forwarded to the selected
-    ZHA TRV-ZBL, TRV-ZBT, or TRVZB valves; TRVZB requires panel target
-    temperature linkage to be enabled. Entering Off forwards the panel's frost
-    protection temperature; changes to that setting are forwarded while Off.
-    Leaving Off forwards the normal target temperature again. Zigbee2MQTT target
-    valves and other selected valves are skipped.
+    Links a SONOFF TP-WGZBA thermostat (ZHA or Zigbee2MQTT) to one or more ZHA
+    SONOFF TRV-ZBL, TRV-ZBT, or TRVZB valves, so their target temperatures follow
+    the panel.
   domain: automation
   homeassistant:
     min_version: 2025.4.0
@@ -31,7 +26,7 @@ blueprint:
 
     target_trvs:
       name: SONOFF TRV devices
-      description: Select one or more SONOFF TRVs. ZHA TRV-ZBL, TRV-ZBT, and TRVZB devices are forwarded. Enable panel target temperature linkage on TRVZB first. Zigbee2MQTT targets and other selected models are logged and skipped.
+      description: Select one or more ZHA SONOFF TRV-ZBL, TRV-ZBT, or TRVZB valves. Enable panel target temperature linkage on each valve before use.
       selector:
         device:
           multiple: true
@@ -62,34 +57,44 @@ triggers:
   - trigger: event
     event_type: state_changed
     id: source_target_temperature_changed
+  - trigger: time_pattern
+    minutes: "/30"
+    seconds: "0"
+    id: off_target_temperature_refresh
 
 conditions:
   - condition: template
     value_template: >
-      {% set old_state = trigger.event.data.old_state %}
-      {% set new_state = trigger.event.data.new_state %}
-      {{ source_climate | trim != ''
-         and old_state is not none
-         and new_state is not none
-         and (
-           (trigger.event.data.entity_id == source_climate | trim
-            and (
-              (new_state.state == 'off' and old_state.state != 'off')
-              or (new_state.state not in ['off', 'unknown', 'unavailable']
-                  and (old_state.state == 'off'
-                       or old_state.attributes.temperature != new_state.attributes.temperature)
-                  and new_state.attributes.temperature is number)
-            ))
-           or (source_frost_temperature_entity | trim != ''
-               and trigger.event.data.entity_id == source_frost_temperature_entity | trim
-               and is_state(source_climate | trim, 'off')
-               and old_state.state != new_state.state)
-         ) }}
+      {% if trigger.id == 'off_target_temperature_refresh' %}
+        {{ source_climate | trim != '' and is_state(source_climate | trim, 'off') }}
+      {% else %}
+        {% set old_state = trigger.event.data.old_state %}
+        {% set new_state = trigger.event.data.new_state %}
+        {{ source_climate | trim != ''
+           and old_state is not none
+           and new_state is not none
+           and (
+             (trigger.event.data.entity_id == source_climate | trim
+              and (
+                (new_state.state == 'off' and old_state.state != 'off')
+                or (new_state.state not in ['off', 'unknown', 'unavailable']
+                    and (old_state.state == 'off'
+                         or old_state.attributes.temperature != new_state.attributes.temperature)
+                    and new_state.attributes.temperature is number)
+              ))
+             or (source_frost_temperature_entity | trim != ''
+                 and trigger.event.data.entity_id == source_frost_temperature_entity | trim
+                 and is_state(source_climate | trim, 'off')
+                 and old_state.state != new_state.state)
+           ) }}
+      {% endif %}
 
 actions:
   - variables:
       forward_temperature: >
-        {% if trigger.event.data.entity_id == source_climate | trim
+        {% if trigger.id == 'off_target_temperature_refresh' %}
+          {{ states(source_frost_temperature_entity | trim) }}
+        {% elif trigger.event.data.entity_id == source_climate | trim
               and trigger.event.data.new_state.state != 'off' %}
           {{ trigger.event.data.new_state.attributes.temperature }}
         {% elif trigger.event.data.entity_id == source_frost_temperature_entity | trim %}

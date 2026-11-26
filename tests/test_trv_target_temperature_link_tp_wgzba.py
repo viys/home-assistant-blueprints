@@ -110,6 +110,67 @@ class TargetTemperatureTests(unittest.TestCase):
                  old_state={"attributes": {"temperature": 19}}, new_state={"attributes": {"temperature": 20}})
         self.assertEqual(run.calls, [])
 
+    def test_half_hour_refresh_forwards_current_frost_target_only_while_off(self):
+        """Resend the current frost target on each timer tick for an Off panel."""
+        # A repeated value must still reach every supported valve to renew linkage.
+        for integration, frost in (("zha", "number.panel_frost_proof_temperature_2"),
+                                   ("mqtt", "number.panel_frost_protection_temperature_12")):
+            run = fanout(integration, targets=["zbl", "zbt", "trvzb"])
+            run.entity_map["panel"].append(frost)
+            run.set_state("climate.panel", "off", temperature=None)
+            run.set_state(frost, 7.5)
+            for expected in (7.5, 7.5, 8):
+                run.calls.clear()
+                run.set_state(frost, expected)
+                run.fire("off_target_temperature_refresh")
+                writes = [call for call in run.calls if call["action"] == "zha.set_zigbee_cluster_attribute"]
+                self.assertEqual([call["data"]["value"] for call in writes], [expected * 100] * 2)
+                self.assertEqual([call["data"]["value"] for call in run.calls
+                                  if call["action"] == "number.set_value"], [expected])
+            run.calls.clear()
+            run.set_state("climate.panel", "heat", temperature=20)
+            run.fire("off_target_temperature_refresh")
+            self.assertEqual(run.calls, [])
+
+    def test_half_hour_refresh_skips_non_off_unknown_and_missing_panels(self):
+        """Never issue timer-driven writes unless the selected panel is explicitly Off."""
+        # Another panel being Off must not enable this automation's periodic sends.
+        for mode in ("heat", "auto", "cool", "unknown", "unavailable", None):
+            run = fanout()
+            if mode is not None:
+                run.set_state("climate.panel", mode, temperature=20)
+            run.set_state("climate.other_panel", "off")
+            run.fire("off_target_temperature_refresh")
+            self.assertEqual(run.calls, [])
+        run = fanout()
+        run.entity_map["panel"] = []
+        run.set_state("climate.panel", "off")
+        run.fire("off_target_temperature_refresh")
+        self.assertEqual(run.calls, [])
+
+    def test_half_hour_refresh_invalid_frost_and_disabled_linkage_never_write(self):
+        """Preserve existing frost-source validation and the TRVZB enable gate."""
+        # No extra diagnostic entity or cached climate target may substitute for frost data.
+        frost = "number.panel_frost_proof_temperature"
+        for entities, value in (([], 5), ([frost, "number.other_frost_proof_temperature"], 5),
+                                ([frost], "unavailable"), ([frost], "unknown"), ([frost], "nan")):
+            run = fanout(targets=["trvzb"])
+            run.entity_map["panel"].extend(entities)
+            run.set_state("climate.panel", "off", temperature=20)
+            run.set_state(frost, value)
+            run.fire("off_target_temperature_refresh")
+            self.assertEqual([call["action"] for call in run.calls], ["system_log.write"])
+            self.assertEqual(run.calls[0]["data"]["level"], "warning")
+        run = fanout(targets=["trvzb", "zbt"])
+        run.entity_map["panel"].append(frost)
+        run.set_state(frost, 5)
+        run.set_state("climate.panel", "off")
+        run.set_state("switch.valve_panel_target_temperature_linkage", "off")
+        run.fire("off_target_temperature_refresh")
+        self.assertFalse(any(call["action"] == "number.set_value" for call in run.calls))
+        self.assertEqual([call["data"]["value"] for call in run.calls
+                          if call["action"] == "zha.set_zigbee_cluster_attribute"], [500])
+
     def test_entering_off_forwards_panel_frost_temperature(self):
         """Use the selected panel's frost setting even when its climate target becomes None."""
         # ZHA and MQTT use different frost entity names; duplicate devices add numeric suffixes.
