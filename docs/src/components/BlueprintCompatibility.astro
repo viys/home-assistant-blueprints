@@ -11,8 +11,8 @@ const labels = {
   not_supported: ['✕', 'Not supported'],
 } as const;
 const integrations = [
-  { name: 'ZHA', logo: 'https://brands.home-assistant.io/zha/icon.png', statuses: entry.zha },
-  { name: 'Zigbee2MQTT', logo: 'https://www.zigbee2mqtt.io/logo.png', statuses: entry.zigbee2mqtt },
+  { name: 'ZHA', logo: `${import.meta.env.BASE_URL.replace(/\/$/, '')}/icons/zha.png`, statuses: entry.zha },
+  { name: 'Zigbee2MQTT', logo: `${import.meta.env.BASE_URL.replace(/\/$/, '')}/icons/zigbee2mqtt.png`, statuses: entry.zigbee2mqtt },
 ];
 ---
 <section class="blueprint-compatibility" aria-label="Compatibility">

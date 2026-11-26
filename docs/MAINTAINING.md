@@ -71,8 +71,10 @@ the same compatibility presentation.
   the table.
 - Keep the JSON metadata as the single source of compatibility status. Do not
   duplicate tables in Markdown or add custom fields to automation YAML.
-- Verify official logo URLs, metadata tests, production build, and the rendered
-  table at desktop and mobile widths when changing this design.
+- Store official platform logos locally under `docs/public/icons/`; resolve
+  them using the configured Astro base path. Do not hotlink external images.
+  Record upstream asset sources in `docs/public/icons/SOURCES.md`. Verify the
+  metadata tests, production build, and desktop/mobile rendering.
 
 When updating Pages, check these details against the current blueprint. Offline
 checks validate existing guide metadata and SVG structure; they do not require
