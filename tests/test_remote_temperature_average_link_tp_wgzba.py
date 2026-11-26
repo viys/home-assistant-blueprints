@@ -4,6 +4,7 @@ from datetime import timedelta
 import unittest
 
 from tests.common.single_source_checks import single_source
+from tests.common.entity_discovery import assert_entity_id_compatibility
 from tools.blueprint_runner import HandledServiceError
 
 
@@ -21,6 +22,22 @@ def average_runner(integration="zha", sources=None):
 
 class AverageTemperatureTests(unittest.TestCase):
     """Verify observable service calls for both declared integrations."""
+
+    def test_source_mode_discovery_is_independent_of_entity_names(self):
+        """Run the shared naming matrix against averaging and mode-enable filtering."""
+        # Raw diagnostic states remain unchanged while all target entity IDs are replaced.
+        def exercise(run, entity_ids):
+            """Refresh an average and then restore its diagnostic source mode."""
+            # The renamed sensor must still admit a mode-enable event.
+            run.fire("periodic_sync")
+            mode = entity_ids["sensor.target_temperature_source_mode"]
+            old = run.set_state(mode, "internal_sensor", device_class="enum")
+            run.fire("periodic_sync")
+            new = run.set_state(mode, "external_sensor", device_class="enum")
+            run.dispatch_state(mode, old, new)
+
+        assert_entity_id_compatibility(self, average_runner, exercise, "target",
+                                       expected_actions=["zha.set_zigbee_cluster_attribute"] * 2)
 
     def test_mixed_units_are_averaged_before_destination_rounding(self):
         """Convert each source before averaging and encode the single legacy input."""

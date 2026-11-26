@@ -1,7 +1,9 @@
 """Test TRV-ZBL temperature synchronization and entity discovery."""
 
+from functools import partial
 import unittest
 
+from tests.common.entity_discovery import assert_entity_id_compatibility
 from tools.blueprint_coverage import ROOT
 from tools.blueprint_runner import BlueprintRunner
 
@@ -173,6 +175,27 @@ class ZblSourcesTests(unittest.TestCase):
 
 
 class ZblEntitySelectionTests(unittest.TestCase):
+    def test_entity_discovery_is_independent_of_entity_names(self):
+        """Use shared localized, custom and numbered IDs for ZHA and MQTT discovery."""
+        # ZHA uses raw enum states; MQTT uses verified number capabilities rather than names.
+        for integration in ("zha", "mqtt"):
+            with self.subTest(integration=integration):
+                def exercise(run, entity_ids):
+                    """Update one source and exercise diagnostic mode recovery for ZHA."""
+                    # The source entity is not on the target device and must remain untouched.
+                    run.fire("source_changed", entity="sensor.source1")
+                    if integration == "zha":
+                        mode = entity_ids["sensor.target_temperature_source_mode"]
+                        old = run.set_state(mode, "internal_sensor", device_class="enum")
+                        run.fire("source_changed", entity="sensor.source1")
+                        new = run.set_state(mode, "external_sensor", device_class="enum")
+                        run.dispatch_state(mode, old, new)
+
+                actions = (["zha.set_zigbee_cluster_attribute"] * 6 if integration == "zha"
+                           else ["number.set_value"])
+                assert_entity_id_compatibility(self, partial(sources, integration), exercise, "target",
+                                               expected_actions=actions)
+
     def instances(self, integration="zha"):
         yield sources(integration), "source_changed", "sensor.source1"
 
