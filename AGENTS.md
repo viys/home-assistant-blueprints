@@ -70,6 +70,15 @@ the declared HA version.
 
 Use two-space indentation, never tabs. Preserve the existing Home Assistant blueprint layout: `blueprint`, `variables`, `triggers`, `conditions`, `actions`, then `mode`. Use descriptive snake_case filenames and blueprint input/variable IDs, such as `remote_temperature_link_tp_wgzba.yaml` and `source_temperature`. Keep human-facing labels concise and explain device, integration, units, and optional behavior in descriptions. Avoid unrelated reformatting.
 
+Keep all blueprint UI names and descriptions short and easy to scan. Prefer
+input names of 2–5 words and descriptions of 1–2 short sentences. Describe the
+choice and its essential effect; do not turn a label into a sentence or an
+input description into a manual. Avoid repeating defaults and ranges already
+visible in selectors, or listing every edge case, lifecycle rule, and technical
+detail. Keep `blueprint.description` to a compact paragraph while preserving
+the required structure below. Apply this to new or changed UI text without
+rewriting unrelated inputs or expanding the task into a Pages update.
+
 Keep `blueprint.description` consistent across all blueprints from the same author. Follow this fixed structure, using the same wording and sentence order as the existing blueprints:
 
 `<action> + <source> → <SONOFF model> (<integration>) → <trigger / behavior> → (temperature only) unit conversion`

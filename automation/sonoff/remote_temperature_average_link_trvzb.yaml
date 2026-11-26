@@ -16,8 +16,8 @@ blueprint:
     min_version: 2025.4.0
   input:
     notify_source_offline:
-      name: Notify when a temperature source is unavailable, invalid, or expired
-      description: Show English notifications in Home Assistant for selected external sensors that are unavailable, unknown, missing, invalid, or past the temperature validity period. Repeated identical readings and attribute updates do not renew validity. One notification per automation lists all affected sources and updates at each check. Removed or recovered sources disappear from the list. The notification clears when no issues remain or when notifications are disabled and the automation reloads. Dismissed alerts may reappear at the next check while the problem remains. Notifications do not send phone push messages. Disabled by default.
+      name: Temperature source notifications
+      description: Show an English notification in Home Assistant for unavailable, invalid, or expired sources. Clears automatically when no issues remain.
       default: false
       selector:
         boolean:
