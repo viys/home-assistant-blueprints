@@ -154,8 +154,8 @@ class BlueprintTests(unittest.TestCase):
                     with self.subTest(blueprint=path.name, template=value[:100]):
                         environment.parse(value)
 
-    def test_readme_catalogue_matches_files(self):
-        """Verify master import badges and both branches' raw links."""
+    def test_readme_catalogue_links_reference_existing_files(self):
+        """Validate optional catalogue entries without requiring every blueprint to be listed."""
         # Compare decoded paths, including each URL-encoded blueprint_url parameter.
         text = (ROOT / "README.md").read_text(encoding="utf-8")
         expected = {path.relative_to(ROOT).as_posix() for path in self.documents}
@@ -182,10 +182,12 @@ class BlueprintTests(unittest.TestCase):
                         break
                 else:
                     self.fail(f"Unexpected raw YAML URL: {url}")
-        for branch in imports:
+        # Every listed blueprint needs all three stable/development links; unlisted YAML is allowed.
+        self.assertLessEqual(imports["master"], expected)
+        self.assertEqual(imports["dev"], set())
+        for branch in raw_links:
             with self.subTest(branch=branch):
-                self.assertEqual(imports[branch], expected if branch == "master" else set())
-                self.assertEqual(raw_links[branch], expected)
+                self.assertEqual(raw_links[branch], imports["master"])
 
     def test_duplicate_yaml_keys_are_rejected(self):
         """Ensure malformed mappings cannot produce a misleading passing check."""

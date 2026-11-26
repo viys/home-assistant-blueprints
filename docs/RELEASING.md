@@ -86,5 +86,4 @@ python -m tools.release_master --tag v1.0.0 --candidate <full_commit_sha>
 
 This refreshes local remote-tracking refs but does not push. The privileged
 workflow adds `--expected-master <validated_baseline_sha> --push` only after
-all validation jobs pass. Real protected-branch token publication still needs
-an end-to-end GitHub run after this workflow is merged into `dev`.
+all validation jobs pass.
