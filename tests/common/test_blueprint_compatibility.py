@@ -7,7 +7,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 DOCS = ROOT / "docs/src"
-STATUSES = {"supported", "limited", "experimental", "not_supported"}
+STATUSES = {"supported", "limited", "experimental", "dev_only", "not_supported"}
 
 
 class BlueprintCompatibilityTests(unittest.TestCase):

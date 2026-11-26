@@ -12,8 +12,6 @@ Calculate an equal-weight average in Home Assistant and send it to one or more T
 
 [![Calculate an equal-weight average in Home Assistant and send it to one or more TRVZB valves.](/home-assistant-blueprints/diagrams/remote_temperature_average_link_trvzb.svg)](/home-assistant-blueprints/diagrams/remote_temperature_average_link_trvzb.svg)
 
-[Open full-size diagram](/home-assistant-blueprints/diagrams/remote_temperature_average_link_trvzb.svg).
-
 ## Before you start
 
 - Home Assistant Core **2025.4.0 or later**.

@@ -96,22 +96,26 @@
     ],
     "zigbee2mqtt": [
       "supported"
-    ],
-    "note": "Up to three sources require compatible firmware and a ZHA quirk or Zigbee2MQTT converter; older versions support source 1 only."
+    ]
   },
   "trv_target_temperature_link_tp_wgzba": {
     "columns": [
       "TP-WGZBA (source)",
-      "TRV (target)"
+      "TRV-ZBL",
+      "TRV-ZBT",
+      "TRVZB"
     ],
     "zha": [
       "supported",
-      "supported"
+      "supported",
+      "supported",
+      "dev_only"
     ],
     "zigbee2mqtt": [
       "supported",
+      "not_supported",
+      "not_supported",
       "not_supported"
-    ],
-    "note": "TRV model availability depends on the imported blueprint version. Check the stable YAML before using a newly added model."
+    ]
   }
 }

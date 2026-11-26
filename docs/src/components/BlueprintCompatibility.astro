@@ -8,6 +8,7 @@ const labels = {
   supported: ['✓', 'Supported'],
   limited: ['!', 'Limited support'],
   experimental: ['◇', 'Experimental'],
+  dev_only: ['!', 'Dev only'],
   not_supported: ['✕', 'Not supported'],
 } as const;
 const integrations = [
@@ -31,7 +32,6 @@ const integrations = [
     </table>
   </div>
   {'note' in entry && <p>{entry.note}</p>}
-  <p class="compatibility-caption">Integration support describes the documented implementation, not hardware certification. The import button uses the stable version; development features may not be available there yet.</p>
 </section>
 <style>
   .blueprint-compatibility { margin-top: 1.5rem; font-size: .9375rem; }
@@ -42,6 +42,8 @@ const integrations = [
   thead th { background: var(--sl-color-gray-6); font-weight: 500; font-size: .8rem; color: var(--sl-color-gray-2); }
   th:first-child { width: 75%; }
   table:has(th:nth-child(3)) th:first-child { width: auto; }
+  table:has(th:nth-child(4)) th, table:has(th:nth-child(4)) td { padding-inline: .55rem; }
+  th, td { vertical-align: middle; }
   .integration-name { display: inline-flex; align-items: center; gap: .5rem; white-space: nowrap; }
   .integration-name img { display: block; width: 28px; height: 28px; border-radius: 50%; object-fit: contain; background: white; }
   tbody th { font-weight: 500; }
@@ -49,6 +51,8 @@ const integrations = [
   .status-symbol { display: inline-grid; place-items: center; width: .8rem; height: .8rem; border-radius: 50%; background: currentColor; position: relative; font-size: 0; }
   .status-symbol::after { content: '✓'; color: white; font-size: .58rem; font-weight: 800; line-height: 1; }
   .not_supported .status-symbol::after { content: '×'; }
+  .dev_only .status-symbol::after { content: '!'; }
+  .dev_only { color: #925a00; }
   .limited .status-symbol::after { content: '!'; }
   .experimental .status-symbol::after { content: '◇'; }
   .supported { color: #008b45; }
@@ -56,5 +60,4 @@ const integrations = [
   .limited { color: #925a00; }
   .experimental { color: var(--sl-color-gray-2); }
   p { margin: .6rem 0 0; }
-  .compatibility-caption { color: var(--sl-color-gray-2); font-size: .85rem; }
 </style>

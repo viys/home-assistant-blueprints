@@ -12,8 +12,6 @@ Use one external room temperature sensor with your TRV-ZBT.
 
 [![Use one external room temperature sensor with your TRV-ZBT.](/home-assistant-blueprints/diagrams/remote_temperature_link_trvzbt.svg)](/home-assistant-blueprints/diagrams/remote_temperature_link_trvzbt.svg)
 
-[Open full-size diagram](/home-assistant-blueprints/diagrams/remote_temperature_link_trvzbt.svg).
-
 ## Before you start
 
 - Home Assistant Core **2025.4.0 or later**.

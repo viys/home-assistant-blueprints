@@ -12,8 +12,6 @@ Send separate readings to TRV-ZBL. With ZHA, the valve averages up to five sourc
 
 [![Send separate readings to TRV-ZBL. With ZHA, the valve averages up to five sources.](/home-assistant-blueprints/diagrams/remote_temperature_link_trv_zbl.svg)](/home-assistant-blueprints/diagrams/remote_temperature_link_trv_zbl.svg)
 
-[Open full-size diagram](/home-assistant-blueprints/diagrams/remote_temperature_link_trv_zbl.svg).
-
 ## Before you start
 
 - Home Assistant Core **2025.10.0 or later**.

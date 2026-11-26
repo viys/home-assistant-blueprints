@@ -12,8 +12,6 @@ Send up to three room temperatures separately to TP-WGZBA remote sources.
 
 [![Send up to three room temperatures separately to TP-WGZBA remote sources.](/home-assistant-blueprints/diagrams/remote_temperature_sources_link_tp_wgzba.svg)](/home-assistant-blueprints/diagrams/remote_temperature_sources_link_tp_wgzba.svg)
 
-[Open full-size diagram](/home-assistant-blueprints/diagrams/remote_temperature_sources_link_tp_wgzba.svg).
-
 ## Before you start
 
 - Home Assistant Core **2025.4.0 or later**.
