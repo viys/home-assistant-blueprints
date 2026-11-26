@@ -70,9 +70,25 @@ the declared HA version.
 
 Use two-space indentation, never tabs. Preserve the existing Home Assistant blueprint layout: `blueprint`, `variables`, `triggers`, `conditions`, `actions`, then `mode`. Use descriptive snake_case filenames and blueprint input/variable IDs, such as `remote_temperature_link_tp_wgzba.yaml` and `source_temperature`. Keep human-facing labels concise and explain device, integration, units, and optional behavior in descriptions. Avoid unrelated reformatting.
 
-Keep `blueprint.description` consistent across all blueprints from the same author. Follow this fixed structure, using the same wording and sentence order as the existing blueprints:
+Keep all blueprint UI names and descriptions short and easy to scan. Prefer
+input names of 2–5 words and descriptions of 1–2 short sentences. Describe the
+choice and its essential effect; do not turn a label into a sentence or an
+input description into a manual. Avoid repeating defaults and ranges already
+visible in selectors, or listing every edge case, lifecycle rule, and technical
+detail. Keep `blueprint.description` to a compact introductory paragraph. Apply
+this to new or changed UI text without
+rewriting unrelated inputs or expanding the task into a Pages update.
 
-`<action> + <source> → <SONOFF model> (<integration>) → <trigger / behavior> → (temperature only) unit conversion`
+Write `blueprint.description` for users deciding whether to use the blueprint,
+not as a complete behavior specification or development status report. In 1–3
+short sentences, introduce its purpose, source and target devices, supported
+integrations, and any prerequisite essential to using it. Do not enumerate all
+triggers, refresh intervals, mode transitions, validation rules, or error paths.
+Mention a behavior only when it helps explain the blueprint's main purpose.
+
+Keep introductions consistent across blueprints from the same author, ordering
+the main action, source, target model, and integration before any essential
+user-facing behavior. This ordering does not require listing every detail.
 
 Describe only what the blueprint supports and does for the user. Do not leak implementation details such as entity IDs, Zigbee cluster or attribute IDs, quirk frame formats, or firmware leases.
 
