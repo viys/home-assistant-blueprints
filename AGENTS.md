@@ -75,6 +75,17 @@ Keep `blueprint.description` consistent across all blueprints from the same auth
 
 Describe only what the blueprint supports and does for the user. Do not leak implementation details such as entity IDs, Zigbee cluster or attribute IDs, quirk frame formats, or firmware leases.
 
+## Entity Discovery, Naming, and Localization
+
+Entity discovery risks: numeric suffixes (`_2`), backend-language translations
+(Chinese pinyin and other languages), user renaming, missing/unavailable entities,
+and ambiguous matches. Scope discovery to the selected device; prefer stable
+raw states or capabilities over names.
+
+Call `assert_entity_id_compatibility` from `tests/common/entity_discovery.py`
+in the blueprint's dedicated tests to check naming variants and event filters.
+Numbering-only cases do not verify localization; test invalid/ambiguous entities separately.
+
 ## Documentation and Link Integrity
 
 ### Scope of website and SVG requirements
@@ -151,6 +162,18 @@ For tooling, validation, or publishing script changes, update affected command
 examples, prerequisites, paths, and workflow instructions in `AGENTS.md`
 and other relevant documentation in the same change. Update
 `docs/MAINTAINING.md` when the change affects site tooling or publishing.
+
+### Strict README restrictions
+
+Do not modify `README.md` unless the user explicitly requests a README change,
+or a file rename/deletion in the task requires repairing an existing link.
+Adding features, fixing bugs, or updating Pages does not authorize README edits.
+Preserve the existing device groups, `<details>` sections, catalogue tables,
+columns, badges, and link format. Format-breaking changes are prohibited unless
+the user explicitly requests that specific format change. Do not insert standalone
+blueprint-specific paragraphs, recommendations, or cross-links before or after
+catalogue tables. Limit authorized edits to the requested content or broken links;
+do not reformat or reorganize unrelated README content.
 
 Keep `README.md` focused on the repository overview, common import/re-import instructions, and the blueprint catalogue, with links to the manual. Keep concise blueprint-specific requirements and supported behavior in the YAML metadata and input descriptions; put illustrated setup steps and examples in the manual. Track unresolved defects and implementation limitations in GitHub Issues. Do not maintain a separate project-level test README; describe test scenarios and limitations in the relevant test names and comments. Do not add per-blueprint troubleshooting, pending-work lists, or issue status paragraphs to the root README.
 
