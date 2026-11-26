@@ -6,8 +6,10 @@ blueprint:
     connected through ZHA or Zigbee2MQTT with one or more SONOFF TRVs. Each
     change to the thermostat's target temperature is forwarded to the selected
     ZHA TRV-ZBL, TRV-ZBT, or TRVZB valves; TRVZB requires panel target
-    temperature linkage to be enabled. Zigbee2MQTT target valves and other
-    selected valves are skipped.
+    temperature linkage to be enabled. Entering Off forwards the panel's frost
+    protection temperature; changes to that setting are forwarded while Off.
+    Leaving Off forwards the normal target temperature again. Zigbee2MQTT target
+    valves and other selected valves are skipped.
   domain: automation
   homeassistant:
     min_version: 2025.4.0
@@ -15,7 +17,7 @@ blueprint:
   input:
     source_tp_wgzba:
       name: TP-WGZBA target temperature source
-      description: Select the TP-WGZBA device that provides the target temperature.
+      description: Select the TP-WGZBA device that provides the target temperature. In Off mode, its available frost protection temperature setting is used instead.
       selector:
         device:
           filter:
@@ -50,6 +52,11 @@ variables:
        | list
        | first
        | default('', true) }}
+  source_frost_temperature_entity: >
+    {% set matches = (device_entities(source_tp_wgzba) or [])
+       | select('match', '^number[.].*_(frost_proof_temperature|frost_protection_temperature)(?:_[0-9]+)?$')
+       | list %}
+    {{ matches[0] if matches | count == 1 else '' }}
 
 triggers:
   - trigger: event
@@ -62,17 +69,50 @@ conditions:
       {% set old_state = trigger.event.data.old_state %}
       {% set new_state = trigger.event.data.new_state %}
       {{ source_climate | trim != ''
-         and trigger.event.data.entity_id == source_climate | trim
          and old_state is not none
          and new_state is not none
-         and old_state.attributes.temperature != new_state.attributes.temperature
-         and new_state.attributes.temperature is number }}
+         and (
+           (trigger.event.data.entity_id == source_climate | trim
+            and (
+              (new_state.state == 'off' and old_state.state != 'off')
+              or (new_state.state not in ['off', 'unknown', 'unavailable']
+                  and (old_state.state == 'off'
+                       or old_state.attributes.temperature != new_state.attributes.temperature)
+                  and new_state.attributes.temperature is number)
+            ))
+           or (source_frost_temperature_entity | trim != ''
+               and trigger.event.data.entity_id == source_frost_temperature_entity | trim
+               and is_state(source_climate | trim, 'off')
+               and old_state.state != new_state.state)
+         ) }}
 
 actions:
   - variables:
+      forward_temperature: >
+        {% if trigger.event.data.entity_id == source_climate | trim
+              and trigger.event.data.new_state.state != 'off' %}
+          {{ trigger.event.data.new_state.attributes.temperature }}
+        {% elif trigger.event.data.entity_id == source_frost_temperature_entity | trim %}
+          {{ trigger.event.data.new_state.state }}
+        {% else %}
+          {{ states(source_frost_temperature_entity | trim) }}
+        {% endif %}
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ not is_number(forward_temperature) }}"
+        sequence:
+          - action: system_log.write
+            data:
+              level: warning
+              message: >
+                TP-WGZBA target-temperature forward skipped: {{ source_climate | trim }}
+                has no unique, available numeric frost protection temperature setting.
+  - condition: template
+    value_template: "{{ is_number(forward_temperature) }}"
+  - variables:
       target_temperature_x100: >
-        {{ (trigger.event.data.new_state.attributes.temperature | float * 100)
-           | round(0) | int }}
+        {{ (forward_temperature | float * 100) | round(0) | int }}
   - repeat:
       for_each: "{{ target_trvs }}"
       sequence:

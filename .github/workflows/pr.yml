@@ -131,7 +131,7 @@ jobs:
                 shown += 1;
               }
               if (files.size > shown) details.push(`- … ${files.size - shown} more changed blueprints.`);
-              content = `${lines.join('  \n')}\n\n<details>\n<summary>Coverage details</summary>\n\n\`\`\`diff\n${diff.join('\n')}\n\`\`\`\n\n${details.join('\n')}\n\n</details>`;
+              content = `${lines.join('  \n')}\n\n${details.join('\n')}\n\n<details>\n<summary>Coverage details</summary>\n\n\`\`\`diff\n${diff.join('\n')}\n\`\`\`\n\n</details>`;
             }
             const body = `${marker}\n## [Blueprint Coverage Report](${runUrl}) · **${status}**\n\n${content}\n\n<sub>Simulated YAML execution only; not real Home Assistant or device coverage.</sub>`;
             const comments = await github.paginate(github.rest.issues.listComments, {

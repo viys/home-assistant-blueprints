@@ -2,6 +2,7 @@
 
 import unittest
 
+from tests.common.entity_discovery import assert_entity_id_compatibility
 from tools.blueprint_coverage import ROOT
 from tools.blueprint_runner import BlueprintRunner, HandledServiceError, ha_bool
 
@@ -26,6 +27,22 @@ def sources(integration="zha", version="0x00001006", extras=True):
 
 class MultiSourceTests(unittest.TestCase):
     """Check independent routing, optional unbinding, units, and firmware boundaries."""
+
+    def test_source_mode_discovery_is_independent_of_entity_names(self):
+        """Apply the shared matrix to individual updates and three-source mode recovery."""
+        # Expected write counts prevent unchanged empty output from passing the compatibility check.
+        def exercise(run, entity_ids):
+            """Write one source, then enable all three through the renamed mode sensor."""
+            # The recovery event must pass the real blueprint's entity filter.
+            run.fire("source_changed", entity="sensor.source1")
+            mode = entity_ids["sensor.target_temperature_source_mode"]
+            old = run.set_state(mode, "internal_sensor", device_class="enum")
+            run.fire("source_changed", entity="sensor.source1")
+            new = run.set_state(mode, "external_sensor", device_class="enum")
+            run.dispatch_state(mode, old, new)
+
+        assert_entity_id_compatibility(self, sources, exercise, "target",
+                                       expected_actions=["zha.set_zigbee_cluster_attribute"] * 4)
 
     def test_new_firmware_updates_only_the_changed_source(self):
         """A source change writes only its corresponding quirk attribute."""

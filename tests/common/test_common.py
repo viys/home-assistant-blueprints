@@ -503,13 +503,27 @@ class CoverageCommentTests(unittest.TestCase):
         self.assertIn("Project coverage: actions **100.0%**, branches **92.0%**", call["body"])
         self.assertIn("<details>", call["body"])
         self.assertIn("```diff", call["body"])
-        self.assertLess(len(call["body"].split("<details>")[0]), 750)
+        self.assertLess(len(call["body"].split("**Changed blueprints**")[0]), 750)
         self.assertNotIn("Full HTML/JSON report", call["body"])
         self.assertNotIn("Workflow run", call["body"])
         self.assertNotIn("| Blueprint |", call["body"])
         self.assertIn("[`example.yaml`](<https://github.com/owner/repo/blob/abc123/"
                       "automation/sonoff/example.yaml>) · [Raw YAML](<https://raw.githubusercontent.com/"
                       "owner/repo/abc123/automation/sonoff/example.yaml>)", call["body"])
+
+    def test_blueprint_download_links_are_visible_without_expanding_coverage(self):
+        """Keep changed YAML links outside the collapsed coverage metrics."""
+        # Users must be able to open or download a changed blueprint directly from the comment.
+        body = self.scenario()["calls"][0]["body"]
+        visible, separator, folded = body.partition("<details>")
+        self.assertTrue(separator)
+        self.assertIn("**Changed blueprints**", visible)
+        self.assertIn("[`example.yaml`]", visible)
+        self.assertIn("[Raw YAML]", visible)
+        self.assertNotIn("[Raw YAML]", folded)
+        self.assertNotIn("```diff", visible)
+        self.assertIn("<summary>Coverage details</summary>", folded)
+        self.assertIn("```diff", folded)
 
     def test_blueprint_links_encode_paths_and_show_only_filename(self):
         """Special characters in paths must not break links or expose directory labels."""

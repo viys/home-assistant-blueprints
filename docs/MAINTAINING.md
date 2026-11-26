@@ -143,6 +143,8 @@ Keep the GitHub icon black rather than inheriting the blue text-link color.
 Set **Settings > Pages > Build and deployment > Source** to **GitHub Actions**.
 Pushes or manual runs on `master` and `dev` publish the same site; the most
 recent successful deployment replaces its content. Pull requests build only.
+For same-repository PRs, changed-blueprint source and `Raw YAML` links remain
+visible in the coverage bot comment; only the coverage metrics are collapsed.
 Both branch publishing and tagged releases reuse `manual-build.yml` to check
 the production site and upload its artifact. Allow `master`, `dev`, and tags
 matching `v*` in the `github-pages` environment's deployment rules.
