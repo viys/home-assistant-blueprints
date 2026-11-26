@@ -431,7 +431,7 @@ const github = {
   },
 };
 const context = {repo: {owner: 'owner', repo: 'repo'}, runId: 101,
-  payload: {pull_request: {number: 12, head: {sha: 'abc123'}}}};
+  payload: {pull_request: {number: 12, head: {sha: 'abc123', repo: {full_name: 'owner/repo'}}}}};
 const core = {info: message => messages.push(message), warning: message => messages.push(message),
   setOutput: (key, value) => { outputs[key] = value; }};
 const fakeRequire = name => {
@@ -507,6 +507,21 @@ class CoverageCommentTests(unittest.TestCase):
         self.assertNotIn("Full HTML/JSON report", call["body"])
         self.assertNotIn("Workflow run", call["body"])
         self.assertNotIn("| Blueprint |", call["body"])
+        self.assertIn("[`example.yaml`](<https://github.com/owner/repo/blob/abc123/"
+                      "automation/sonoff/example.yaml>) · [Raw YAML](<https://raw.githubusercontent.com/"
+                      "owner/repo/abc123/automation/sonoff/example.yaml>)", call["body"])
+
+    def test_blueprint_links_encode_paths_and_show_only_filename(self):
+        """Special characters in paths must not break links or expose directory labels."""
+        # Both destinations use the same PR commit even when the path needs URL encoding.
+        file = "automation/sonoff/a folder/sensor #1(测试).yaml"
+        report = dict(tests_passed=True, tests_run=1, gates=[], changed_files=[file],
+                      opportunities=[dict(file=file, kind="action", hits=1)])
+        body = self.scenario(report=report)["calls"][0]["body"]
+        encoded = "automation/sonoff/a%20folder/sensor%20%231(%E6%B5%8B%E8%AF%95).yaml"
+        self.assertIn(f"[`sensor #1(测试).yaml`](<https://github.com/owner/repo/blob/abc123/{encoded}>)", body)
+        self.assertIn(f"[Raw YAML](<https://raw.githubusercontent.com/owner/repo/abc123/{encoded}>)", body)
+        self.assertNotIn("[`automation/", body)
 
     def test_updates_only_its_own_existing_bot_comment(self):
         """Do not edit human comments even when they contain the report marker."""
@@ -551,7 +566,10 @@ class CoverageCommentTests(unittest.TestCase):
             for index in range(1000)])
         body = self.scenario(report=report)["calls"][0]["body"]
         self.assertLess(len(body), 65536)
-        self.assertIn("950 more changed blueprints", body)
+        shown = body.count("[Raw YAML]")
+        self.assertGreater(shown, 0)
+        self.assertLessEqual(shown, 50)
+        self.assertIn(f"{1000 - shown} more changed blueprints", body)
         self.assertNotIn("Full HTML/JSON report", body)
 
     def test_empty_changed_denominator_remains_not_applicable(self):
