@@ -2,6 +2,7 @@
 
 import unittest
 
+from tests.common.entity_discovery import NUMBERED_ENTITY_IDS, assert_entity_id_compatibility
 from tools.blueprint_coverage import ROOT
 from tools.blueprint_runner import BlueprintRunner, HandledServiceError
 
@@ -108,6 +109,129 @@ class TargetTemperatureTests(unittest.TestCase):
         run.fire("source_target_temperature_changed", entity="climate.panel",
                  old_state={"attributes": {"temperature": 19}}, new_state={"attributes": {"temperature": 20}})
         self.assertEqual(run.calls, [])
+
+    def test_entering_off_forwards_panel_frost_temperature(self):
+        """Use the selected panel's frost setting even when its climate target becomes None."""
+        # ZHA and MQTT use different frost entity names; duplicate devices add numeric suffixes.
+        for integration, frost in (
+                ("zha", "number.panel_frost_proof_temperature_2"),
+                ("mqtt", "number.panel_frost_protection_temperature_12")):
+            with self.subTest(integration=integration):
+                run = fanout(integration, targets=["zbl", "zbt", "trvzb"])
+                run.entity_map["panel"].append(frost)
+                run.set_state(frost, 7.5, unit="°C")
+                old = run.set_state("climate.panel", "heat", temperature=6)
+                new = run.set_state("climate.panel", "off", temperature=None)
+                run.dispatch_state("climate.panel", old, new)
+                writes = [call for call in run.calls if call["action"].startswith("zha.")]
+                self.assertEqual([call["data"]["value"] for call in writes], [750, 750])
+                numbers = [call for call in run.calls if call["action"] == "number.set_value"]
+                self.assertEqual([call["data"]["value"] for call in numbers], [7.5])
+
+    def test_off_forwarding_supports_numbered_source_and_target_entities(self):
+        """Apply shared numbering checks to both panel discovery and TRVZB linkage controls."""
+        # These custom controls use fallback English names today; this test claims numbering support only.
+        for integration in ("zha", "mqtt"):
+            def make_runner():
+                """Create an independent fixture with the integration's frost-control name."""
+                # Both factories preserve the chosen source device and target linkage setup.
+                run = fanout(integration, targets=["trvzb"])
+                frost = ("number.panel_frost_proof_temperature" if integration == "zha"
+                         else "number.panel_frost_protection_temperature")
+                run.entity_map["panel"].append(frost)
+                run.set_state(frost, 7.5)
+                return run
+
+            def exercise(run, entity_ids):
+                """Dispatch Off using the possibly renamed source climate entity."""
+                # Target-only renames leave the panel climate ID unchanged.
+                climate = entity_ids.get("climate.panel", "climate.panel")
+                old = run.set_state(climate, "heat", temperature=6)
+                new = run.set_state(climate, "off", temperature=None)
+                run.dispatch_state(climate, old, new)
+
+            for device in ("panel", "trvzb"):
+                with self.subTest(integration=integration, device=device):
+                    assert_entity_id_compatibility(self, make_runner, exercise, device,
+                                                   expected_actions=["number.set_value"],
+                                                   variants=NUMBERED_ENTITY_IDS)
+
+    def test_frost_changes_forward_only_while_panel_is_off(self):
+        """Follow changed frost settings in Off without forwarding echoes or room readings."""
+        # The entity state is a numeric string rather than a climate temperature attribute.
+        run = fanout(targets=["trvzb"])
+        frost = "number.panel_frost_proof_temperature"
+        run.entity_map["panel"].append(frost)
+        run.set_state("climate.panel", "off", temperature=None)
+        old = run.set_state(frost, 5)
+        new = run.set_state(frost, 10)
+        run.dispatch_state(frost, old, new)
+        self.assertEqual(run.calls[0]["data"]["value"], 10)
+        run.calls.clear()
+        run.dispatch_state(frost, new, new)
+        off = run.states["climate.panel"]
+        run.dispatch_state("climate.panel", off, run.set_state("climate.panel", "off", temperature=5))
+        self.assertEqual(run.calls, [])
+        run.set_state("climate.panel", "heat", temperature=20)
+        run.dispatch_state(frost, new, run.set_state(frost, 12))
+        self.assertEqual(run.calls, [])
+
+    def test_off_missing_ambiguous_and_invalid_frost_settings_are_logged(self):
+        """Never invent a fallback temperature when the panel frost setting cannot be used."""
+        # Only entities belonging to the chosen source device can supply frost settings.
+        frost = "number.panel_frost_proof_temperature"
+        for entities, value in (([], 5), ([frost, "number.other_frost_proof_temperature"], 5),
+                                ([frost], "unavailable"), ([frost], "unknown"), ([frost], "nan")):
+            with self.subTest(entities=entities, value=value):
+                run = fanout(targets=["trvzb"])
+                run.entity_map["panel"].extend(entities)
+                run.set_state(frost, value)
+                old = run.set_state("climate.panel", "heat", temperature=20)
+                new = run.set_state("climate.panel", "off", temperature=None)
+                run.dispatch_state("climate.panel", old, new)
+                self.assertEqual([call["action"] for call in run.calls], ["system_log.write"])
+                self.assertEqual(run.calls[0]["data"]["level"], "warning")
+                self.assertIn("frost", run.calls[0]["data"]["message"])
+
+    def test_leaving_off_uses_climate_target_and_initial_states_do_not_forward(self):
+        """Restore normal target forwarding on Heat without sending on entity creation."""
+        # A stale frost setting must not override a fresh non-Off climate target.
+        run = fanout(targets=["trvzb"])
+        frost = "number.panel_frost_proof_temperature"
+        run.entity_map["panel"].append(frost)
+        run.set_state(frost, 5)
+        off = run.set_state("climate.panel", "off", temperature=None)
+        run.dispatch_state("climate.panel", None, off)
+        run.dispatch_state(frost, None, run.states[frost])
+        self.assertEqual(run.calls, [])
+        run.dispatch_state("climate.panel", off, run.set_state("climate.panel", "heat", temperature=20))
+        self.assertEqual(run.calls[0]["data"]["value"], 20)
+
+    def test_leaving_off_resends_an_unchanged_climate_target(self):
+        """Replace the frost target even when an MQTT climate retains its setpoint while Off."""
+        # Mode changes switch the effective source even if the temperature attribute is unchanged.
+        run = fanout("mqtt", targets=["trvzb"])
+        run.entity_map["panel"].append("number.panel_frost_protection_temperature")
+        run.set_state("number.panel_frost_protection_temperature", 5)
+        old = run.set_state("climate.panel", "off", temperature=20)
+        new = run.set_state("climate.panel", "heat", temperature=20)
+        run.dispatch_state("climate.panel", old, new)
+        self.assertEqual(run.calls[0]["data"]["value"], 20)
+
+    def test_unknown_and_unavailable_climate_states_never_forward_cached_targets(self):
+        """Do not treat a panel availability change as leaving Off for a working mode."""
+        # Climate entities can retain numeric temperature attributes while unavailable.
+        for integration in ("zha", "mqtt"):
+            for previous_mode in ("off", "heat"):
+                for next_mode in ("unknown", "unavailable"):
+                    for temperature in (20, 21):
+                        with self.subTest(integration=integration, previous=previous_mode,
+                                          next=next_mode, temperature=temperature):
+                            run = fanout(integration, targets=["zbl", "zbt", "trvzb"])
+                            old = run.set_state("climate.panel", previous_mode, temperature=20)
+                            new = run.set_state("climate.panel", next_mode, temperature=temperature)
+                            run.dispatch_state("climate.panel", old, new)
+                            self.assertEqual(run.calls, [])
 
     def test_unchanged_missing_nonnumeric_and_unrelated_events_skip(self):
         """Reject changes that do not carry a new numeric target temperature."""
