@@ -115,15 +115,17 @@ jobs:
                 counts[offset + 1] += 1;
                 files.set(point.file, counts);
               }
-              const details = files.size ? ['**Changed blueprints**', ''] : [];
+              const details = files.size ? ['**Changed blueprints**', '',
+                'Raw YAML follows the latest PR head; coverage and file links refer to the tested commit.', ''] : [];
               const sourceRepo = pull.head.repo.full_name;
+              const rawRef = `${owner}/${repo}/refs/pull/${pull.number}/head`;
               let shown = 0;
               for (const [file, counts] of [...files].sort().slice(0, 50)) {
                 const label = file.split('/').pop().replace(/[|`<>]/g, '').slice(0, 120);
-                // Pin both links to the PR head, encoding each path segment separately.
+                // Pin file views to the tested commit; use the base repository PR ref for stable raw URLs.
                 const path = file.split('/').map(encodeURIComponent).join('/');
                 const sourceUrl = `${process.env.GITHUB_SERVER_URL}/${sourceRepo}/blob/${pull.head.sha}/${path}`;
-                const rawUrl = `https://raw.githubusercontent.com/${sourceRepo}/${pull.head.sha}/${path}`;
+                const rawUrl = `https://raw.githubusercontent.com/${rawRef}/${path}`;
                 const entry = `- [\`${label}\`](<${sourceUrl}>) · [Raw YAML](<${rawUrl}>) — actions **${counts[0]}/${counts[1]}**, branches **${counts[2]}/${counts[3]}**`;
                 // Encoded URLs may be much longer than the displayed filename.
                 if (details.join('\n').length + entry.length > 50000) break;

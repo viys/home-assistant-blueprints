@@ -42,9 +42,12 @@ blueprint.
 
 For same-repository PRs, the coverage bot's changed-blueprint list links each
 filename to its GitHub file and provides a `Raw YAML` link for manual import.
-Both links are pinned to the PR head commit; use the updated comment links
-after pushing changes. Keep these links visible outside the collapsed coverage
-details. Fork PR comments remain disabled.
+Filename links point to the tested PR head commit. Raw YAML links use the base
+repository's `refs/pull/<number>/head` so their addresses stay unchanged across
+updates to the same PR. The comment must explain that Raw YAML follows the latest
+PR head while coverage and file links refer to the displayed tested commit.
+Keep these links visible outside the collapsed coverage details. Fork PR
+comments remain disabled.
 
 Each blueprint must have exactly one dedicated test file. For
 `automation/sonoff/<blueprint>.yaml`, use `tests/test_<blueprint>.py` with the
