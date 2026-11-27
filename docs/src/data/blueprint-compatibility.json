@@ -1,0 +1,121 @@
+{
+  "remote_source_link_snzb02dr2": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_average_link_tp_wgzba": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_average_link_trvzb": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_average_link_trvzbt": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_link_tp_wgzba": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_link_trv_zbl": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_link_trvzb": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_link_trvzbt": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "remote_temperature_sources_link_tp_wgzba": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "supported"
+    ],
+    "zigbee2mqtt": [
+      "supported"
+    ]
+  },
+  "trv_target_temperature_link_tp_wgzba": {
+    "columns": [
+      "TP-WGZBA (source)",
+      "TRV-ZBL",
+      "TRV-ZBT",
+      "TRVZB"
+    ],
+    "zha": [
+      "supported",
+      "supported",
+      "supported",
+      "dev_only"
+    ],
+    "zigbee2mqtt": [
+      "supported",
+      "not_supported",
+      "not_supported",
+      "not_supported"
+    ]
+  }
+}

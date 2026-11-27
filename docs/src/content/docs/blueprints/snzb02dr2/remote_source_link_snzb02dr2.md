@@ -12,8 +12,6 @@ Supply temperature and optional humidity to a remote slot on SNZB-02DR2.
 
 [![Supply temperature and optional humidity to a remote slot on SNZB-02DR2.](/home-assistant-blueprints/diagrams/remote_source_link_snzb02dr2.svg)](/home-assistant-blueprints/diagrams/remote_source_link_snzb02dr2.svg)
 
-[Open full-size diagram](/home-assistant-blueprints/diagrams/remote_source_link_snzb02dr2.svg).
-
 ## Before you start
 
 - Home Assistant Core **2025.4.0 or later**.

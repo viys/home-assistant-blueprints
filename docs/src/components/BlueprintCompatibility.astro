@@ -1,0 +1,63 @@
+---
+import compatibility from '../data/blueprint-compatibility.json';
+
+const { blueprint } = Astro.props;
+const entry = compatibility[blueprint as keyof typeof compatibility];
+if (!entry) throw new Error(`Missing compatibility for ${blueprint}`);
+const labels = {
+  supported: ['✓', 'Supported'],
+  limited: ['!', 'Limited support'],
+  experimental: ['◇', 'Experimental'],
+  dev_only: ['!', 'Dev only'],
+  not_supported: ['✕', 'Not supported'],
+} as const;
+const integrations = [
+  { name: 'ZHA', logo: `${import.meta.env.BASE_URL.replace(/\/$/, '')}/icons/zha.png`, statuses: entry.zha },
+  { name: 'Zigbee2MQTT', logo: `${import.meta.env.BASE_URL.replace(/\/$/, '')}/icons/zigbee2mqtt.png`, statuses: entry.zigbee2mqtt },
+];
+---
+<section class="blueprint-compatibility" aria-label="Compatibility">
+  <h2>Compatibility</h2>
+  <div class="compatibility-scroll">
+    <table>
+      <thead><tr><th scope="col">Integration</th>{entry.columns.map(column => <th scope="col">{entry.columns.length === 1 ? 'Status' : column}</th>)}</tr></thead>
+      <tbody>
+        {integrations.map(({ name, logo, statuses }) => (
+          <tr><th scope="row"><span class="integration-name"><img src={logo} alt="" width="28" height="28" />{name}</span></th>{statuses.map(status => {
+            const [symbol, label] = labels[status as keyof typeof labels];
+            return <td><span class:list={['compatibility-status', status]}><span class="status-symbol" aria-hidden="true">{symbol}</span> {label}</span></td>;
+          })}</tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  {'note' in entry && <p>{entry.note}</p>}
+</section>
+<style>
+  .blueprint-compatibility { margin-top: 1.5rem; font-size: .9375rem; }
+  h2 { font-size: 1.125rem; margin: 0 0 .65rem; }
+  .compatibility-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; text-align: left; }
+  th, td { padding: .5rem 1rem; border-bottom: 1px solid var(--sl-color-gray-5); }
+  thead th { background: var(--sl-color-gray-6); font-weight: 500; font-size: .8rem; color: var(--sl-color-gray-2); }
+  th:first-child { width: 75%; }
+  table:has(th:nth-child(3)) th:first-child { width: auto; }
+  table:has(th:nth-child(4)) th, table:has(th:nth-child(4)) td { padding-inline: .55rem; }
+  th, td { vertical-align: middle; }
+  .integration-name { display: inline-flex; align-items: center; gap: .5rem; white-space: nowrap; }
+  .integration-name img { display: block; width: 28px; height: 28px; border-radius: 50%; object-fit: contain; background: white; }
+  tbody th { font-weight: 500; }
+  .compatibility-status { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; font-weight: 500; }
+  .status-symbol { display: inline-grid; place-items: center; width: .8rem; height: .8rem; border-radius: 50%; background: currentColor; position: relative; font-size: 0; }
+  .status-symbol::after { content: '✓'; color: white; font-size: .58rem; font-weight: 800; line-height: 1; }
+  .not_supported .status-symbol::after { content: '×'; }
+  .dev_only .status-symbol::after { content: '!'; }
+  .dev_only { color: #925a00; }
+  .limited .status-symbol::after { content: '!'; }
+  .experimental .status-symbol::after { content: '◇'; }
+  .supported { color: #008b45; }
+  .not_supported { color: #b42318; }
+  .limited { color: #925a00; }
+  .experimental { color: var(--sl-color-gray-2); }
+  p { margin: .6rem 0 0; }
+</style>

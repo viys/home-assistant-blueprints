@@ -40,6 +40,46 @@ Each blueprint included in Pages has one guide and one SVG using its YAML filena
 front matter contains `blueprint: <yaml_filename_stem>`; the shared title component
 creates stable import, raw YAML, source, and development links from that field.
 Keep the title equal to `blueprint.name` and document integration differences.
+Maintain platform status in `src/data/blueprint-compatibility.json`, keyed by the
+blueprint stem. The shared title renders the compatibility table automatically.
+Each entry declares device-role columns and aligned ZHA and Zigbee2MQTT status
+arrays (supported, limited, experimental, dev_only, not_supported), plus an optional note.
+Check both stable and development YAML when updating claims. Use Dev only for
+support available in dev but not master, and update that status on stable release.
+Keep platform-specific setup in the guide.
+
+
+### Compatibility table design
+
+Render the shared `BlueprintCompatibility.astro` component below the import and
+download actions, before the guide body. Every published blueprint guide uses
+the same compatibility presentation.
+
+- List ZHA first and Zigbee2MQTT second. Use original-color official platform
+  logos, cropped to 28 × 28 px circles, with an 8 px gap before the name.
+  Keep decorative logo alt text empty because the adjacent name identifies it.
+- Use **Integration** and **Status** headers with approximately 75% / 25%
+  column widths. For different source and target support, use explicit
+  device-model columns instead; list each actual model separately, never a generic
+  TRV column when multiple models are supported.
+- Use compact rows, a subtle header background, and fine horizontal separators;
+  avoid heavy borders and decorative cards. Retain the website's light theme.
+- Use green text and a filled green circle with a white check for Supported;
+  red with a cross for Not supported; amber with an exclamation mark for
+  Limited support and Dev only; neutral with a diamond for Experimental. Always retain
+  readable text alongside the symbol.
+- Vertically align names, logos, and statuses; keep status labels on one line.
+  Allow horizontal scrolling on narrow screens. Omit generic disclaimers and
+  repeated explanations; add a note only for an essential, unique prerequisite.
+- Keep the JSON metadata as the single source of compatibility status. Do not
+  duplicate tables in Markdown or add custom fields to automation YAML.
+- Store official platform logos locally under `docs/public/icons/`; resolve
+  them using the configured Astro base path. Do not hotlink external images.
+  Use optimized 56 × 56 px PNG assets for 28 px display (2× density); retain
+  original colors and transparency. Record upstream asset sources in
+  `docs/public/icons/SOURCES.md`. Verify the
+  metadata tests, production build, and desktop/mobile rendering.
+
 When updating Pages, check these details against the current blueprint. Offline
 checks validate existing guide metadata and SVG structure; they do not require
 every blueprint to appear in Pages or force guide text to change with YAML.
@@ -73,8 +113,8 @@ badge at `40px` high for **Import blueprint** on the website; keep the compact
 README badges at their existing size. Preserve the
 official artwork and the image's accessible label; do not add custom button
 colors, padding, or an extra arrow. Stable raw YAML, source, and development
-YAML belong under **Other download options**. Preserve a full-size diagram
-link without repeating mobile scrolling instructions on every page.
+YAML belong under **Other download options**. Link the inline diagram image to its full-size SVG; do not add a separate
+Open full-size diagram text link or repeat mobile scrolling instructions.
 Keep shared pages free of model-specific requirements and examples. Only the
 homepage's **Find your device** section lists models; device details belong in
 their overviews and blueprint guides.

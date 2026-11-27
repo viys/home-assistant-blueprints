@@ -12,8 +12,6 @@ Use one external room temperature sensor with your TP-WGZBA.
 
 [![Use one external room temperature sensor with your TP-WGZBA.](/home-assistant-blueprints/diagrams/remote_temperature_link_tp_wgzba.svg)](/home-assistant-blueprints/diagrams/remote_temperature_link_tp_wgzba.svg)
 
-[Open full-size diagram](/home-assistant-blueprints/diagrams/remote_temperature_link_tp_wgzba.svg).
-
 ## Before you start
 
 - Home Assistant Core **2025.4.0 or later**.

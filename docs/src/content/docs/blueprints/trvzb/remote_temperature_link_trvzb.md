@@ -12,8 +12,6 @@ Send one room temperature to one or more TRVZB valves, through ZHA or Zigbee2MQT
 
 [![Send one room temperature to one or more TRVZB valves, through ZHA or Zigbee2MQTT.](/home-assistant-blueprints/diagrams/remote_temperature_link_trvzb.svg)](/home-assistant-blueprints/diagrams/remote_temperature_link_trvzb.svg)
 
-[Open full-size diagram](/home-assistant-blueprints/diagrams/remote_temperature_link_trvzb.svg).
-
 ## Before you start
 
 - Home Assistant Core **2025.4.0 or later**.
