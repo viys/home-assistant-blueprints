@@ -2,13 +2,9 @@ blueprint:
   name: Sync Average Temperature to TP-WGZBA
   author: Sonoff
   description: >
-    Synchronizes the average of external temperature readings with a SONOFF
-    TP-WGZBA thermostat connected through ZHA or Zigbee2MQTT. The average is
-    applied while external temperature mode is enabled, on source updates,
-    startup, automation reload, and every minute. Unavailable, invalid, and
-    expired sources are excluded. When all sources are excluded, synchronization
-    stops until a valid source returns. Temperature values in Celsius,
-    Fahrenheit, or Kelvin are automatically converted to Celsius.
+    Synchronizes the average of external temperature readings calculated in
+    Home Assistant with a SONOFF TP-WGZBA thermostat through ZHA or
+    Zigbee2MQTT. Enable external temperature mode on the thermostat before use.
   domain: automation
   homeassistant:
     min_version: 2025.4.0

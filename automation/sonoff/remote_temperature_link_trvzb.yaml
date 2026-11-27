@@ -2,11 +2,9 @@ blueprint:
   name: "Sync Remote Temperature to TRVZB"
   author: Sonoff
   description: >
-    Synchronizes an external temperature reading with one or more SONOFF TRVZB
-    thermostatic radiator valves connected through ZHA or Zigbee2MQTT. The
-    reading is applied whenever the valve's external temperature mode is
-    enabled, on source updates, startup, and automation reload. Temperature values in
-    Celsius, Fahrenheit, or Kelvin are automatically converted to Celsius.
+    Synchronizes an external temperature reading with one or more SONOFF
+    TRVZB thermostatic radiator valves through ZHA or Zigbee2MQTT. Enable
+    external temperature mode on each valve before use.
   domain: automation
   homeassistant:
     min_version: 2025.4.0
