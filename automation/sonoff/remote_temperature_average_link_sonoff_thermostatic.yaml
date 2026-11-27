@@ -10,6 +10,32 @@ blueprint:
   homeassistant:
     min_version: 2025.10.0
   input:
+    notify_source_offline:
+      name: Temperature source notifications
+      description: Show an English notification in Home Assistant for unavailable, invalid, or expired sources. Clears automatically when no issues remain.
+      default: false
+      selector:
+        boolean:
+    source_timeout:
+      name: Temperature validity period
+      description: Exclude a source when its temperature state has not changed for this long. Identical readings and attribute updates do not extend validity.
+      default: 60
+      selector:
+        number:
+          min: 1
+          max: 120
+          step: 1
+          unit_of_measurement: min
+          mode: box
+    source_entities:
+      name: External temperature sensors
+      description: Select sensors from other devices to average with equal weight. Sensors belonging to any selected target are excluded.
+      selector:
+        entity:
+          multiple: true
+          filter:
+            domain: sensor
+            device_class: temperature
     target_devices:
       name: SONOFF thermostatic devices
       description: Select devices with external temperature mode enabled. TRV-ZBL requires a compatible ZHA device handler or Zigbee2MQTT converter.
@@ -42,32 +68,6 @@ blueprint:
             - integration: mqtt
               manufacturer: SONOFF
               model_id: TRV-ZBL
-    source_entities:
-      name: External temperature sensors
-      description: Select sensors from other devices to average with equal weight. Sensors belonging to any selected target are excluded.
-      selector:
-        entity:
-          multiple: true
-          filter:
-            domain: sensor
-            device_class: temperature
-    source_timeout:
-      name: Temperature validity period
-      description: Exclude a source when its temperature state has not changed for this long. Identical readings and attribute updates do not extend validity.
-      default: 60
-      selector:
-        number:
-          min: 1
-          max: 120
-          step: 1
-          unit_of_measurement: min
-          mode: box
-    notify_source_offline:
-      name: Temperature source notifications
-      description: Show an English notification in Home Assistant for unavailable, invalid, or expired sources. Clears automatically when no issues remain.
-      default: false
-      selector:
-        boolean:
 
 variables:
   selected_targets: !input target_devices
