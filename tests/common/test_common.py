@@ -431,7 +431,8 @@ const github = {
   },
 };
 const context = {repo: {owner: 'owner', repo: 'repo'}, runId: 101,
-  payload: {pull_request: {number: 12, head: {sha: 'abc123', repo: {full_name: 'owner/repo'}}}}};
+  payload: {pull_request: {number: input.prNumber ?? 12,
+    head: {sha: input.headSha ?? 'abc123', repo: {full_name: input.headRepo ?? 'owner/repo'}}}}};
 const core = {info: message => messages.push(message), warning: message => messages.push(message),
   setOutput: (key, value) => { outputs[key] = value; }};
 const fakeRequire = name => {
@@ -509,7 +510,31 @@ class CoverageCommentTests(unittest.TestCase):
         self.assertNotIn("| Blueprint |", call["body"])
         self.assertIn("[`example.yaml`](<https://github.com/owner/repo/blob/abc123/"
                       "automation/sonoff/example.yaml>) · [Raw YAML](<https://raw.githubusercontent.com/"
-                      "owner/repo/abc123/automation/sonoff/example.yaml>)", call["body"])
+                      "owner/repo/refs/pull/12/head/automation/sonoff/example.yaml>)", call["body"])
+
+    def test_raw_yaml_address_stays_fixed_across_pr_commits(self):
+        """Repeated pushes change the tested commit but preserve each PR's download address."""
+        # Raw links follow the PR; the report still identifies the exact commit it measured.
+        first = self.scenario()["calls"][0]["body"]
+        updated = self.scenario(headSha="def456", currentSha="def456")["calls"][0]["body"]
+        raw = "https://raw.githubusercontent.com/owner/repo/refs/pull/12/head/automation/sonoff/example.yaml"
+        self.assertIn(f"[Raw YAML](<{raw}>)", first)
+        self.assertIn(f"[Raw YAML](<{raw}>)", updated)
+        self.assertIn("/blob/abc123/", first)
+        self.assertIn("/blob/def456/", updated)
+        self.assertIn("/commit/def456", updated)
+        self.assertIn("Raw YAML follows the latest PR head", updated)
+        another = self.scenario(prNumber=34)["calls"][0]["body"]
+        self.assertIn("/refs/pull/34/head/", another)
+        self.assertNotIn(raw, another)
+
+    def test_raw_yaml_pr_ref_uses_base_repository_for_fork_heads(self):
+        """Build PR refs in the base repository even when the source commit belongs to a fork."""
+        # This checks URL construction only; the workflow still disables fork comments.
+        body = self.scenario(headRepo="contributor/fork")["calls"][0]["body"]
+        self.assertIn("https://raw.githubusercontent.com/owner/repo/refs/pull/12/head/", body)
+        self.assertNotIn("https://raw.githubusercontent.com/contributor/fork/", body)
+        self.assertIn("https://github.com/contributor/fork/blob/abc123/", body)
 
     def test_blueprint_download_links_are_visible_without_expanding_coverage(self):
         """Keep changed YAML links outside the collapsed coverage metrics."""
@@ -527,14 +552,14 @@ class CoverageCommentTests(unittest.TestCase):
 
     def test_blueprint_links_encode_paths_and_show_only_filename(self):
         """Special characters in paths must not break links or expose directory labels."""
-        # Both destinations use the same PR commit even when the path needs URL encoding.
+        # The file view is commit-pinned; the stable PR raw URL encodes the same path.
         file = "automation/sonoff/a folder/sensor #1(测试).yaml"
         report = dict(tests_passed=True, tests_run=1, gates=[], changed_files=[file],
                       opportunities=[dict(file=file, kind="action", hits=1)])
         body = self.scenario(report=report)["calls"][0]["body"]
         encoded = "automation/sonoff/a%20folder/sensor%20%231(%E6%B5%8B%E8%AF%95).yaml"
         self.assertIn(f"[`sensor #1(测试).yaml`](<https://github.com/owner/repo/blob/abc123/{encoded}>)", body)
-        self.assertIn(f"[Raw YAML](<https://raw.githubusercontent.com/owner/repo/abc123/{encoded}>)", body)
+        self.assertIn(f"[Raw YAML](<https://raw.githubusercontent.com/owner/repo/refs/pull/12/head/{encoded}>)", body)
         self.assertNotIn("[`automation/", body)
 
     def test_updates_only_its_own_existing_bot_comment(self):

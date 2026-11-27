@@ -14,6 +14,7 @@ def average_runner(integration="zha", sources=None):
     run = single_source(("remote_temperature_average_link_tp_wgzba.yaml",
                          "TP-WGZBA", "Zigbee thermostat panel", 0x7009), integration)
     run.inputs["source_entities"] = sources if sources is not None else ["sensor.source", "sensor.second"]
+    run.doc["variables"]["this"] = {"entity_id": "automation.average_test"}
     run.set_state("sensor.second", "24", "°C")
     if integration == "mqtt":
         run.set_state("select.target_temperature_sensor_select", "remote_temperature")
@@ -78,7 +79,7 @@ class AverageTemperatureTests(unittest.TestCase):
             run.fire("source_changed")
             self.assertEqual(run.calls[-1]["data"]["value"], 2300 if integration == "zha" else 23)
 
-    def test_all_expired_stops_every_service_call_until_a_source_changes(self):
+    def test_all_expired_stops_temperature_writes_until_a_source_changes(self):
         """Let the thermostat time out naturally rather than sending offline or zero."""
         # The default validity is 60 minutes; startup and reload must not bypass it.
         for integration in ("zha", "mqtt"):
@@ -86,7 +87,9 @@ class AverageTemperatureTests(unittest.TestCase):
             run.clock += timedelta(minutes=61)
             for trigger in ("periodic_sync", "ha_started", "automation_reloaded"):
                 run.fire(trigger)
-            self.assertEqual(run.calls, [])
+            self.assertEqual([call["action"] for call in run.calls],
+                             ["persistent_notification.dismiss"])
+            run.calls.clear()
             run.set_state("sensor.second", "25", "°C")
             run.fire("source_changed")
             self.assertEqual(len(run.calls), 1)
@@ -202,7 +205,9 @@ class AverageTemperatureTests(unittest.TestCase):
             original = run.states["sensor.source"]["last_changed"]
             for trigger in ("ha_started", "automation_reloaded", "periodic_sync"):
                 run.fire(trigger)
-            self.assertEqual(len(run.calls), 3)
+            self.assertEqual(len(run.calls), 4)
+            self.assertEqual(sum(call["action"] == "persistent_notification.dismiss"
+                                 for call in run.calls), 1)
             self.assertEqual(run.states["sensor.source"]["last_changed"], original)
 
     def test_unavailable_source_event_recalculates_and_recovery_rejoins(self):
@@ -324,3 +329,174 @@ class AverageTemperatureTests(unittest.TestCase):
         run.hook = acknowledge_after_local_selection
         run.fire("periodic_sync")
         self.assertEqual([call["action"] for call in run.calls], ["number.set_value"])
+
+
+class SourceNotificationTests(unittest.TestCase):
+    """Exercise optional English source alerts without changing temperature dispatch."""
+
+    def test_notifications_are_opt_in(self):
+        """Existing automations retain their service behavior until alerts are enabled."""
+        # An offline source must not add a notification by default.
+        run = average_runner()
+        run.set_state("sensor.source", "unavailable", "°C")
+        run.fire("periodic_sync")
+        self.assertEqual([call["action"] for call in run.calls], ["zha.set_zigbee_cluster_attribute"])
+
+    def test_unavailable_missing_invalid_and_expired_sources_have_distinct_alerts(self):
+        """Explain each excluded source and continue synchronizing its valid peer."""
+        # Both integrations share source validity rules and English messages.
+        for integration in ("zha", "mqtt"):
+            for state, reason in (("unavailable", "unavailable"), ("unknown", "unavailable"),
+                                  (None, "unavailable"), ("bad", "invalid"), ("20", "expired")):
+                with self.subTest(integration=integration, state=state):
+                    run = average_runner(integration)
+                    run.inputs["notify_source_offline"] = True
+                    run.clock += timedelta(minutes=60)
+                    if state is None:
+                        del run.states["sensor.source"]
+                    elif reason != "expired":
+                        run.set_state("sensor.source", state, "°C", friendly_name="Bedroom")
+                    run.set_state("sensor.second", "25", "°C")
+                    run.fire("periodic_sync")
+                    alert = run.calls[0]
+                    self.assertEqual(alert["action"], "persistent_notification.create")
+                    self.assertEqual(alert["data"]["title"], "TP-WGZBA remote temperature alert")
+                    name = "sensor.source" if state is None or reason == "expired" else "Bedroom"
+                    text = ("No temperature change for 60 minutes." if reason == "expired"
+                            else "Invalid temperature." if reason == "invalid" else "Unavailable.")
+                    self.assertEqual(alert["data"]["message"], f"- {name} — {text}")
+                    self.assertEqual(run.calls[-1]["data"]["value"], 2500 if integration == "zha" else 25)
+
+    def test_all_sources_expire_same_ids_are_reused_and_recovery_clears(self):
+        """Alerts precede the no-source guard and clear after fresh readings return."""
+        # Repeated checks update existing notification IDs rather than stack alerts.
+        run = average_runner(sources=["sensor.source", "sensor.source", "sensor.second"])
+        run.inputs["notify_source_offline"] = True
+        run.clock += timedelta(minutes=61)
+        for trigger in ("periodic_sync", "ha_started", "automation_reloaded"):
+            run.calls.clear()
+            run.fire(trigger)
+            self.assertEqual([call["action"] for call in run.calls],
+                             ["persistent_notification.create"])
+            self.assertEqual([call["data"]["notification_id"] for call in run.calls],
+                             ["automation.average_test_temperature_sources"])
+        run.calls.clear()
+        run.set_state("sensor.source", "21", "°C")
+        run.fire("source_changed")
+        self.assertEqual(run.calls[0]["action"], "persistent_notification.create")
+        self.assertNotIn("sensor.source", run.calls[0]["data"]["message"])
+        self.assertIn("sensor.second", run.calls[0]["data"]["message"])
+        self.assertEqual(run.calls[-1]["data"]["value"], 2100)
+        run.calls.clear()
+        run.set_state("sensor.second", "25", "°C")
+        run.fire("source_changed")
+        self.assertEqual(run.calls[0]["action"], "persistent_notification.dismiss")
+        self.assertEqual(run.calls[0]["data"]["notification_id"],
+                         "automation.average_test_temperature_sources")
+
+    def test_target_sensors_are_not_monitored_and_notification_errors_do_not_block_sync(self):
+        """Exclude thermostat-owned readings and isolate notification service failures."""
+        # Inject a notification error without affecting the temperature service target.
+        run = average_runner(sources=["sensor.source", "sensor.self"])
+        run.inputs["notify_source_offline"] = True
+        run.doc["variables"]["this"] = {"entity_id": "automation.another_average"}
+        run.entity_map["target"].append("sensor.self")
+        run.set_state("sensor.self", "unavailable", "°C")
+        run.fail.add(None)
+        run.fire("periodic_sync")
+        self.assertEqual(len(run.errors), 1)
+        self.assertEqual(len(run.calls), 2)
+        self.assertEqual(run.calls[0]["data"]["notification_id"],
+                         "automation.another_average_temperature_sources")
+        self.assertEqual(run.calls[-1]["data"]["value"], 2000)
+
+    def test_custom_timeout_identical_reports_and_attribute_updates_do_not_renew_validity(self):
+        """Expire at the configured boundary despite repeated identical temperatures."""
+        # Use a one-minute timeout to verify the input rather than a fixed 60 minutes.
+        run = average_runner(sources=["sensor.source"])
+        run.inputs.update(notify_source_offline=True, source_timeout=1)
+        run.clock += timedelta(seconds=59)
+        run.set_state("sensor.source", "20", "°C", battery=90)
+        run.fire("periodic_sync")
+        self.assertEqual(run.calls[0]["action"], "persistent_notification.dismiss")
+        run.calls.clear()
+        run.clock += timedelta(seconds=1)
+        run.fire("periodic_sync")
+        self.assertEqual(len(run.calls), 1)
+        self.assertEqual(run.calls[0]["data"]["message"],
+                         "- sensor.source — No temperature change for 1 minute.")
+
+    def test_offline_transition_and_recovery_use_sensor_name_and_same_notification(self):
+        """Source events show the affected sensor and clear only its alert on recovery."""
+        # Dispatch through actual source selection instead of assuming a periodic check.
+        run = average_runner()
+        run.inputs["notify_source_offline"] = True
+        old = run.states["sensor.source"]
+        new = run.set_state("sensor.source", "unavailable", "°C", friendly_name="Bedroom sensor")
+        run.dispatch_state("sensor.source", old, new)
+        alert = run.calls[0]
+        self.assertEqual(alert["data"]["message"], "- Bedroom sensor — Unavailable.")
+        run.calls.clear()
+        recovered = run.set_state("sensor.source", "20", "°C", friendly_name="Bedroom sensor")
+        run.dispatch_state("sensor.source", new, recovered)
+        self.assertEqual(run.calls[0]["action"], "persistent_notification.dismiss")
+        self.assertEqual(run.calls[0]["data"]["notification_id"], alert["data"]["notification_id"])
+        self.assertEqual(run.calls[-1]["data"]["value"], 2200)
+
+    def test_removing_source_updates_summary_and_removing_all_issues_clears_it(self):
+        """Reload replaces the issue list rather than leaving removed sensors behind."""
+        # Keep a second unavailable source to verify replacement before final dismissal.
+        run = average_runner()
+        run.inputs["notify_source_offline"] = True
+        for source in run.inputs["source_entities"]:
+            run.set_state(source, "unavailable", "°C")
+        run.fire("periodic_sync")
+        notification_id = run.calls[0]["data"]["notification_id"]
+        run.calls.clear()
+        run.inputs["source_entities"] = ["sensor.second"]
+        run.fire("automation_reloaded")
+        self.assertEqual(len(run.calls), 1)
+        self.assertEqual(run.calls[0]["action"], "persistent_notification.create")
+        self.assertEqual(run.calls[0]["data"]["notification_id"], notification_id)
+        self.assertNotIn("sensor.source", run.calls[0]["data"]["message"])
+        self.assertIn("sensor.second", run.calls[0]["data"]["message"])
+        run.calls.clear()
+        run.inputs["source_entities"] = []
+        run.fire("automation_reloaded")
+        self.assertEqual(run.calls[0]["action"], "persistent_notification.dismiss")
+        self.assertEqual(run.calls[0]["data"]["notification_id"], notification_id)
+
+    def test_disabling_notifications_clears_summary_on_reload(self):
+        """An existing alert is removed when notification settings are disabled."""
+        # Saving blueprint inputs reloads the automation with the new Boolean value.
+        run = average_runner()
+        run.inputs["notify_source_offline"] = True
+        run.set_state("sensor.source", "unavailable", "°C")
+        run.fire("periodic_sync")
+        notification_id = run.calls[0]["data"]["notification_id"]
+        run.calls.clear()
+        run.inputs["notify_source_offline"] = False
+        run.fire("automation_reloaded")
+        self.assertEqual(run.calls[0]["action"], "persistent_notification.dismiss")
+        self.assertEqual(run.calls[0]["data"]["notification_id"], notification_id)
+        self.assertEqual(run.calls[-1]["data"]["value"], 2400)
+
+    def test_disabled_target_mode_still_updates_and_clears_source_alerts(self):
+        """Monitor sources and clear disabled alerts while temperature writes are gated."""
+        # Both integrations must keep notifications independent of target source mode.
+        for integration in ("zha", "mqtt"):
+            run = average_runner(integration)
+            run.inputs["notify_source_offline"] = True
+            mode = ("sensor.target_temperature_source_mode" if integration == "zha"
+                    else "select.target_temperature_sensor_select")
+            run.set_state(mode, "internal_sensor" if integration == "zha" else "local_temperature",
+                          **({"device_class": "enum"} if integration == "zha" else {}))
+            run.set_state("sensor.source", "unavailable", "°C")
+            run.fire("periodic_sync")
+            self.assertEqual([call["action"] for call in run.calls],
+                             ["persistent_notification.create"])
+            run.calls.clear()
+            run.inputs["notify_source_offline"] = False
+            run.fire("automation_reloaded")
+            self.assertEqual([call["action"] for call in run.calls],
+                             ["persistent_notification.dismiss"])

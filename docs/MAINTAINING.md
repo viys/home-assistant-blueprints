@@ -185,6 +185,10 @@ Pushes or manual runs on `master` and `dev` publish the same site; the most
 recent successful deployment replaces its content. Pull requests build only.
 For same-repository PRs, changed-blueprint source and `Raw YAML` links remain
 visible in the coverage bot comment; only the coverage metrics are collapsed.
+File links show the tested head commit. Raw YAML links use the base repository's
+`refs/pull/<number>/head` and keep the same address across PR updates. They follow
+the latest PR head, which can be newer than the tested commit shown in the comment.
+Fork PR comments remain disabled.
 Both branch publishing and tagged releases reuse `manual-build.yml` to check
 the production site and upload its artifact. Allow `master`, `dev`, and tags
 matching `v*` in the `github-pages` environment's deployment rules.

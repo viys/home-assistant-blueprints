@@ -3,11 +3,7 @@ blueprint:
   author: Sonoff
   description: >
     Synchronizes an external temperature reading and an optional humidity
-    reading with a SONOFF SNZB-02DR2 connected through ZHA or Zigbee2MQTT.
-    Each source is validated and written independently to the selected remote
-    slot when it updates. Updates received during a send are combined using
-    each source's latest reading. Temperature values in Celsius, Fahrenheit,
-    or Kelvin are automatically converted to Celsius.
+    reading with a SONOFF SNZB-02DR2 through ZHA or Zigbee2MQTT.
   domain: automation
 
   homeassistant:

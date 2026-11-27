@@ -2,16 +2,10 @@ blueprint:
   name: Sync Remote Temperature Sources to TP-WGZBA
   author: Sonoff
   description: >
-    Synchronizes external temperature readings with a SONOFF TP-WGZBA
-    thermostat through ZHA or Zigbee2MQTT. ZHA supports up to three sources on
-    newer firmware and source 1 on older firmware. Zigbee2MQTT supports up to
-    three sources with a compatible converter and source 1 with older converters.
-    ZHA synchronization runs while the external temperature sensor is enabled
-    and resumes when it is turned on. Zigbee2MQTT synchronizes each source
-    on updates, and synchronizes all three sources on startup or automation
-    reload with a compatible converter. Empty optional sources are unbound.
-    Temperature values in Celsius, Fahrenheit, or Kelvin are automatically
-    converted to Celsius.
+    Synchronizes separate external temperature readings with a SONOFF
+    TP-WGZBA thermostat through ZHA or Zigbee2MQTT. Enable external
+    temperature mode before use; multiple sources require compatible
+    firmware and integration support.
   domain: automation
   homeassistant:
     min_version: 2025.4.0

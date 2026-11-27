@@ -38,6 +38,15 @@ If the updated blueprint changes its inputs, review and adjust any automations t
 Select a device to browse and import its blueprints.
 
 <details>
+<summary><strong>THERMOSTATIC</strong></summary>
+
+| Blueprint | Import | Links | Dev links |
+| --- | --- | --- | --- |
+| **Sync Average Temperature to SONOFF Thermostatic Devices** | <a href="https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fviys%2Fhome-assistant-blueprints%2Fblob%2Fmaster%2Fautomation%2Fsonoff%2Fremote_temperature_average_link_sonoff_thermostatic.yaml"><img src="https://my.home-assistant.io/badges/blueprint_import.svg" alt="Import blueprint" height="28"></a> | [Raw YAML](https://raw.githubusercontent.com/viys/home-assistant-blueprints/master/automation/sonoff/remote_temperature_average_link_sonoff_thermostatic.yaml) | [Raw YAML](https://raw.githubusercontent.com/viys/home-assistant-blueprints/dev/automation/sonoff/remote_temperature_average_link_sonoff_thermostatic.yaml) |
+
+</details>
+
+<details>
 <summary><strong>SNZB-02DR2</strong></summary>
 
 | Blueprint | Import | Links | Dev links |

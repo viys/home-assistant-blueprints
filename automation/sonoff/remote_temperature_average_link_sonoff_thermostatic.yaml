@@ -1,0 +1,353 @@
+blueprint:
+  name: Sync Average Temperature to SONOFF Thermostatic Devices
+  author: Sonoff
+  description: >
+    Synchronizes the average of external temperature readings calculated in
+    Home Assistant with one or more SONOFF TRVZB, TRV-ZBT, TRV-ZBL, or TP-WGZBA devices
+    through ZHA or Zigbee2MQTT. Enable external temperature mode on each
+    target before use.
+  domain: automation
+  homeassistant:
+    min_version: 2025.10.0
+  input:
+    notify_source_offline:
+      name: Temperature source notifications
+      description: Show an English notification in Home Assistant for unavailable, invalid, or expired sources. Clears automatically when no issues remain.
+      default: false
+      selector:
+        boolean:
+    source_timeout:
+      name: Temperature validity period
+      description: Exclude a source when its temperature state has not changed for this long. Identical readings and attribute updates do not extend validity.
+      default: 60
+      selector:
+        number:
+          min: 1
+          max: 120
+          step: 1
+          unit_of_measurement: min
+          mode: box
+    source_entities:
+      name: External temperature sensors
+      description: Select sensors from other devices to average with equal weight. Sensors belonging to any selected target are excluded.
+      selector:
+        entity:
+          multiple: true
+          filter:
+            domain: sensor
+            device_class: temperature
+    target_devices:
+      name: SONOFF thermostatic devices
+      description: Select devices with external temperature mode enabled. TRV-ZBL requires a compatible ZHA device handler or Zigbee2MQTT converter.
+      selector:
+        device:
+          multiple: true
+          # Add a selector entry and a device profile together when enabling a model.
+          filter:
+            - integration: zha
+              manufacturer: SONOFF
+              model: TRVZB
+            - integration: zha
+              manufacturer: SONOFF
+              model: TRV-ZBT
+            - integration: zha
+              manufacturer: SONOFF
+              model: TP-WGZBA
+            - integration: zha
+              manufacturer: SONOFF
+              model: TRV-ZBL
+            - integration: mqtt
+              manufacturer: SONOFF
+              model_id: TRVZB
+            - integration: mqtt
+              manufacturer: SONOFF
+              model_id: TRV-ZBT
+            - integration: mqtt
+              manufacturer: SONOFF
+              model_id: TP-WGZBA
+            - integration: mqtt
+              manufacturer: SONOFF
+              model_id: TRV-ZBL
+
+variables:
+  selected_targets: !input target_devices
+  target_devices: "{{ ([selected_targets] if selected_targets is string else selected_targets) | unique | list }}"
+  source_entities: !input source_entities
+  source_timeout: !input source_timeout
+  notify_source_offline: !input notify_source_offline
+  # Profiles describe device differences; averaging, notifications and fan-out stay shared.
+  # For an existing transport, add a profile plus selectors and dedicated regression cases.
+  device_profiles:
+    TRVZB:
+      integrations: [zha, mqtt]
+      mqtt_modes: [external, external_2, external_3, remote_temperature, remote_source_offline]
+      zha_mode_kind: switch
+      zha_mode_pattern: '^switch[.].*_external_temperature_sensor(?:_[0-9]+)?$'
+      zha_write: number
+    TRV-ZBT:
+      integrations: [zha, mqtt]
+      mqtt_modes: [remote_temperature, remote_source_offline]
+      zha_mode_kind: switch
+      zha_mode_pattern: '^switch[.].*_(temperature_sensor_select|external_temperature_sensor)(?:_[0-9]+)?$'
+      zha_write: number
+    TP-WGZBA:
+      integrations: [zha, mqtt]
+      mqtt_modes: [external, remote_temperature, remote_source_offline]
+      zha_mode_kind: enum
+      zha_mode_pattern: ''
+      zha_write: attribute
+      zha_endpoint: 1
+      zha_cluster: 0xFC11
+      zha_attribute: 0x7009
+      zha_scale: 100
+    TRV-ZBL:
+      integrations: [zha, mqtt]
+      # Official sonoff.ts uses remoteTemperatureSource for T01; firmware restores bound offline sources.
+      mqtt_modes: [remote_temperature, remote_source_offline]
+      zha_mode_kind: enum
+      zha_mode_pattern: ''
+      zha_write: attribute
+      zha_endpoint: 1
+      zha_cluster: 0xFC11
+      # PR #5740 maps local FF02 (Celsius x100) to 0x601E:T=0x01, not multi-source T03.
+      # Contract: zigpy/zha-device-handlers@58f2b9217e6347a91880a17b1a7b367db2f29be4.
+      zha_attribute: 0xFF02
+      zha_scale: 100
+      zha_min_value: -3000
+      zha_max_value: 10000
+  target_entities: >
+    {% set ns = namespace(entities=[]) %}
+    {% for device in target_devices %}
+      {% set ns.entities = ns.entities + (device_entities(device) or []) %}
+    {% endfor %}
+    {{ ns.entities | unique | list }}
+  # Filter broad state events to mode changes and recovery, excluding write echoes.
+  target_mode_entities: >
+    {% set ns = namespace(entities=[]) %}
+    {% for entity in target_entities %}
+      {% if entity is match('^select[.].*_temperature_sensor_select(?:_[0-9]+)?$') %}
+        {% set ns.entities = ns.entities + [entity] %}
+      {% elif entity.startswith('sensor.') and state_attr(entity, 'device_class') == 'enum'
+            and states(entity) in ['internal_sensor', 'external_sensor'] %}
+        {% set ns.entities = ns.entities + [entity] %}
+      {% else %}
+        {% for profile in device_profiles.values() if profile.zha_mode_kind == 'switch' %}
+          {% if entity is match(profile.zha_mode_pattern) %}
+            {% set ns.entities = ns.entities + [entity] %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endfor %}
+    {{ ns.entities | unique | list }}
+  target_value_entities: >
+    {{ target_entities
+       | select('match', '^number[.].*_(external_temperature_sensor_value|external_temperature_input)(?:_[0-9]+)?$')
+       | list }}
+
+triggers:
+  - trigger: state
+    id: source_changed
+    entity_id: !input source_entities
+  - trigger: time_pattern
+    id: periodic_sync
+    minutes: "/1"
+  - trigger: homeassistant
+    id: ha_started
+    event: start
+  - trigger: event
+    id: automation_reloaded
+    event_type: automation_reloaded
+  - trigger: event
+    id: target_mode_changed
+    event_type: state_changed
+
+conditions:
+  - condition: template
+    value_template: >
+      {{ trigger.id != 'target_mode_changed'
+         or (trigger.event.data.new_state is not none
+             and (trigger.event.data.old_state is none
+                  or trigger.event.data.old_state.state != trigger.event.data.new_state.state)
+             and (trigger.event.data.entity_id in target_mode_entities
+                  or (trigger.event.data.entity_id in target_value_entities
+                      and trigger.event.data.old_state is not none
+                      and trigger.event.data.old_state.state in ['unknown', 'unavailable']
+                      and is_number(trigger.event.data.new_state.state)))) }}
+
+actions:
+  # Keep one automation-owned summary, including when sources are removed on reload.
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ notify_source_offline or trigger.id == 'automation_reloaded' }}"
+        sequence:
+          - variables:
+              notification_id: "{{ this.entity_id ~ '_temperature_sources' }}"
+              source_issues: >
+                {% set ns = namespace(issues=[]) %}
+                {% for entity in source_entities | unique | list if notify_source_offline %}
+                  {% if entity not in target_entities %}
+                    {% set source = states[entity] %}
+                    {% set reason = '' %}
+                    {% if source is none or source.state in ['unknown', 'unavailable'] %}
+                      {% set reason = 'Unavailable.' %}
+                    {% elif not is_number(source.state)
+                            or state_attr(entity, 'unit_of_measurement') not in ['°C', '°F', 'K'] %}
+                      {% set reason = 'Invalid temperature.' %}
+                    {% elif (now() - source.last_changed).total_seconds() >= source_timeout | float * 60 %}
+                      {% set reason = 'No temperature change for ' ~ source_timeout ~
+                         (' minute.' if source_timeout | float == 1 else ' minutes.') %}
+                    {% endif %}
+                    {% if reason != '' %}
+                      {% set ns.issues = ns.issues + ['- ' ~
+                         (state_attr(entity, 'friendly_name') or entity) ~ ' — ' ~ reason] %}
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+                {{ ns.issues }}
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ source_issues | count > 0 }}"
+                sequence:
+                  - action: persistent_notification.create
+                    continue_on_error: true
+                    data:
+                      notification_id: "{{ notification_id }}"
+                      title: SONOFF remote temperature alert
+                      message: "{{ source_issues | join('\n') }}"
+            default:
+              - action: persistent_notification.dismiss
+                continue_on_error: true
+                data:
+                  notification_id: "{{ notification_id }}"
+  - repeat:
+      for_each: "{{ target_devices }}"
+      sequence:
+        - variables:
+            target_device: "{{ repeat.item }}"
+            target_integration: >
+              {% set ns = namespace(values=[]) %}
+              {% for identifier in (device_attr(target_device, 'identifiers') or []) %}
+                {% if identifier[0] in ['zha', 'mqtt'] %}
+                  {% set ns.values = ns.values + [identifier[0]] %}
+                {% endif %}
+              {% endfor %}
+              {% set values = ns.values | unique | list %}
+              {{ values[0] if values | count == 1 else '' }}
+            target_model: >
+              {{ device_attr(target_device, 'model') if target_integration == 'zha'
+                 else device_attr(target_device, 'model_id') }}
+            profile: "{{ device_profiles.get(target_model, {}) }}"
+        # Reject unsupported model/integration pairs before inspecting or writing their controls.
+        - condition: template
+          value_template: >
+            {{ profile | count > 0 and target_integration in profile.integrations
+               and device_attr(target_device, 'manufacturer') == 'SONOFF' }}
+        - variables:
+            device_entity_ids: "{{ device_entities(target_device) or [] }}"
+            zha_mode_entities: >
+              {% set ns = namespace(entities=[]) %}
+              {% for entity in device_entity_ids %}
+                {% if profile.zha_mode_kind == 'enum' %}
+                  {% if entity.startswith('sensor.') and state_attr(entity, 'device_class') == 'enum'
+                        and states(entity) in ['internal_sensor', 'external_sensor'] %}
+                    {% set ns.entities = ns.entities + [entity] %}
+                  {% endif %}
+                {% elif entity is match(profile.zha_mode_pattern) %}
+                  {% set ns.entities = ns.entities + [entity] %}
+                {% endif %}
+              {% endfor %}
+              {{ ns.entities }}
+            zha_mode: "{{ zha_mode_entities[0] if zha_mode_entities | count == 1 else '' }}"
+            zha_temperature_entities: >
+              {{ device_entity_ids | select('match', '^number[.].*_external_temperature_sensor_value(?:_[0-9]+)?$') | list }}
+            zha_temperature: "{{ zha_temperature_entities[0] if zha_temperature_entities | count == 1 else '' }}"
+            target_ieee: >
+              {% set ns = namespace(values=[]) %}
+              {% for identifier in (device_attr(target_device, 'identifiers') or []) if identifier[0] == 'zha' %}
+                {% set ns.values = ns.values + [identifier[1]] %}
+              {% endfor %}
+              {{ ns.values[0] if ns.values | count == 1 else '' }}
+            mqtt_mode_entities: >
+              {{ device_entity_ids | select('match', '^select[.].*_temperature_sensor_select(?:_[0-9]+)?$') | list }}
+            mqtt_mode: "{{ mqtt_mode_entities[0] if mqtt_mode_entities | count == 1 else '' }}"
+            mqtt_temperature_entities: >
+              {{ device_entity_ids | select('match', '^number[.].*_external_temperature_input(?:_[0-9]+)?$') | list }}
+            mqtt_temperature: "{{ mqtt_temperature_entities[0] if mqtt_temperature_entities | count == 1 else '' }}"
+        - condition: template
+          value_template: >
+            {{ trigger.id != 'target_mode_changed'
+               or trigger.event.data.entity_id in [zha_mode, zha_temperature, mqtt_mode, mqtt_temperature] }}
+        # Recheck live device mode and source freshness when each queued target is dispatched.
+        - condition: template
+          value_template: >
+            {{ (target_integration == 'zha' and zha_mode != ''
+                and ((profile.zha_write == 'attribute' and target_ieee != ''
+                      and is_state(zha_mode, 'external_sensor'))
+                     or (profile.zha_write == 'number' and is_state(zha_mode, 'on')
+                         and zha_temperature != '' and is_number(states(zha_temperature)))))
+               or (target_integration == 'mqtt' and mqtt_mode != '' and mqtt_temperature != ''
+                   and states(mqtt_mode) in profile.mqtt_modes) }}
+        - variables:
+            valid_temperatures: >
+              {% set ns = namespace(values=[]) %}
+              {% set current_time = now() %}
+              {% for entity in source_entities | unique | list %}
+                {% set source = states[entity] %}
+                {% set unit = state_attr(entity, 'unit_of_measurement') %}
+                {% if source is not none and entity not in target_entities
+                      and is_number(source.state) and unit in ['°C', '°F', 'K']
+                      and 0 <= (current_time - source.last_changed).total_seconds() < source_timeout | float * 60 %}
+                  {% set value = source.state | float %}
+                  {% set temperature = (value - 32) * 5 / 9 if unit == '°F'
+                                       else value - 273.15 if unit == 'K' else value %}
+                  {% set ns.values = ns.values + [temperature] %}
+                {% endif %}
+              {% endfor %}
+              {{ ns.values }}
+        - condition: template
+          value_template: "{{ valid_temperatures | count > 0 }}"
+        - variables:
+            average_temperature: "{{ (valid_temperatures | sum) / (valid_temperatures | count) }}"
+        # A failed target write stops only this target's sequence, preserving the remaining fan-out.
+        - sequence:
+            - choose:
+                - conditions:
+                    - condition: template
+                      value_template: "{{ target_integration == 'zha' and profile.zha_write == 'attribute' }}"
+                  sequence:
+                    - variables:
+                        zha_attribute_value: "{{ (average_temperature | float * profile.zha_scale) | round(0) | int }}"
+                    # Virtual attributes may reject out-of-range samples before transport.
+                    - condition: template
+                      value_template: >
+                        {{ (profile.get('zha_min_value') is none or zha_attribute_value >= profile.zha_min_value)
+                           and (profile.get('zha_max_value') is none or zha_attribute_value <= profile.zha_max_value) }}
+                    - action: zha.set_zigbee_cluster_attribute
+                      data:
+                        ieee: "{{ target_ieee }}"
+                        endpoint_id: "{{ profile.zha_endpoint }}"
+                        cluster_id: "{{ profile.zha_cluster }}"
+                        cluster_type: in
+                        attribute: "{{ profile.zha_attribute }}"
+                        value: "{{ zha_attribute_value }}"
+              default:
+                # Number services consume the displayed entity unit, unlike raw Zigbee attributes.
+                - variables:
+                    temperature_entity: "{{ zha_temperature if target_integration == 'zha' else mqtt_temperature }}"
+                    temperature_unit: "{{ state_attr(temperature_entity, 'unit_of_measurement') }}"
+                    forward_temperature: >
+                      {{ ((average_temperature | float * 9 / 5 + 32) if temperature_unit == '°F'
+                          else (average_temperature | float + 273.15) if temperature_unit == 'K'
+                          else average_temperature | float) | round(1) }}
+                - condition: template
+                  value_template: "{{ temperature_unit in ['°C', '°F', 'K'] }}"
+                - action: number.set_value
+                  target:
+                    entity_id: "{{ temperature_entity }}"
+                  data:
+                    value: "{{ forward_temperature }}"
+          continue_on_error: true
+
+mode: queued

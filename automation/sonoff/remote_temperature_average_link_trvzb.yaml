@@ -2,15 +2,10 @@ blueprint:
   name: Sync Average Temperature to TRVZB
   author: Sonoff
   description: >
-    Synchronizes the average of external temperature readings with one or more SONOFF
-    TRVZB thermostatic radiator valves connected through ZHA or Zigbee2MQTT.
-    The average is applied while external temperature mode is enabled, on source updates,
-    startup, automation reload, and every minute. Unavailable, invalid, and
-    expired sources are excluded. When all sources are excluded, synchronization
-    stops until a valid source returns. Optional English notifications identify
-    unavailable, invalid, or expired temperature sources and clear when valid readings return.
-    Temperature values in Celsius,
-    Fahrenheit, or Kelvin are automatically converted to Celsius.
+    Synchronizes the average of external temperature readings calculated in
+    Home Assistant with one or more SONOFF TRVZB thermostatic radiator valves
+    through ZHA or Zigbee2MQTT. Enable external temperature mode on each
+    valve before use.
   domain: automation
   homeassistant:
     min_version: 2025.4.0

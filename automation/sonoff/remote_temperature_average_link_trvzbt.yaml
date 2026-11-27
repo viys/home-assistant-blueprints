@@ -2,17 +2,20 @@ blueprint:
   name: Sync Average Temperature to TRV-ZBT
   author: Sonoff
   description: >
-    Synchronizes the average of external temperature readings with one or more SONOFF
-    TRV-ZBT thermostatic radiator valves connected through ZHA or Zigbee2MQTT.
-    The average is applied while external temperature mode is enabled, on source updates,
-    startup, automation reload, and every minute. Unavailable, invalid, and
-    expired sources are excluded. When all sources are excluded, synchronization
-    stops until a valid source returns. Temperature values in Celsius,
-    Fahrenheit, or Kelvin are automatically converted to Celsius.
+    Synchronizes the average of external temperature readings calculated in
+    Home Assistant with one or more SONOFF TRV-ZBT thermostatic radiator
+    valves through ZHA or Zigbee2MQTT. Enable external temperature mode on
+    each valve before use.
   domain: automation
   homeassistant:
     min_version: 2025.4.0
   input:
+    notify_source_offline:
+      name: Temperature source notifications
+      description: Show an English notification in Home Assistant for unavailable, invalid, or expired sources. Clears automatically when no issues remain.
+      default: false
+      selector:
+        boolean:
     target_device:
       name: TRV-ZBT devices
       description: Select one or more ZHA or Zigbee2MQTT radiator valves and enable their external temperature mode. Use a compatible ZHA quirk or Zigbee2MQTT converter. Use only one temperature synchronization automation per valve. Unavailable or failed valves do not prevent updates to the others.
@@ -49,6 +52,7 @@ blueprint:
             device_class: temperature
 
 variables:
+  notify_source_offline: !input notify_source_offline
   target_device: !input target_device
   # Normalize the selection before deduplicating target devices.
   target_devices: "{{ ([target_device] if target_device is string else target_device) | unique | list }}"
@@ -102,6 +106,66 @@ conditions:
                       and is_number(trigger.event.data.new_state.state)))) }}
 
 actions:
+  # One automation-owned summary can be replaced after sources are removed.
+  # Reload also clears existing alerts when the notification option is disabled.
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ notify_source_offline or trigger.id == 'automation_reloaded' }}"
+        sequence:
+          - variables:
+              notification_id: "{{ this.entity_id ~ '_temperature_sources' }}"
+              source_issues: >
+                {% set ns = namespace(issues=[]) %}
+                {% set current_time = now() %}
+                {% for entity in source_entities | unique | list if notify_source_offline %}
+                  {% if entity not in target_entities %}
+                    {% set source = states[entity] %}
+                    {% set reason = '' %}
+                    {% if source is none or source.state in ['unknown', 'unavailable'] %}
+                      {% set reason = 'unavailable' %}
+                    {% elif not is_number(source.state)
+                            or state_attr(entity, 'unit_of_measurement') not in ['°C', '°F', 'K'] %}
+                      {% set reason = 'invalid' %}
+                    {% elif (current_time - source.last_changed).total_seconds() >= source_timeout | float * 60 %}
+                      {% set reason = 'expired' %}
+                    {% endif %}
+                    {% if reason != '' %}
+                      {% set ns.issues = ns.issues + [dict(entity=entity, reason=reason)] %}
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+                {{ ns.issues }}
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ source_issues | count > 0 }}"
+                sequence:
+                  - action: persistent_notification.create
+                    continue_on_error: true
+                    data:
+                      notification_id: "{{ notification_id }}"
+                      title: "TRV-ZBT remote temperature alert"
+                      message: >
+                        {% set ns = namespace(lines=[]) %}
+                        {% for issue in source_issues %}
+                          {% if issue.reason == 'expired' %}
+                            {% set reason = 'No temperature change for ' ~ source_timeout ~
+                               (' minute.' if source_timeout | float == 1 else ' minutes.') %}
+                          {% elif issue.reason == 'invalid' %}
+                            {% set reason = 'Invalid temperature.' %}
+                          {% else %}
+                            {% set reason = 'Unavailable.' %}
+                          {% endif %}
+                          {% set ns.lines = ns.lines + ['- ' ~
+                             (state_attr(issue.entity, 'friendly_name') or issue.entity) ~ ' — ' ~ reason] %}
+                        {% endfor %}
+                        {{ ns.lines | join('\n') }}
+            default:
+              - action: persistent_notification.dismiss
+                continue_on_error: true
+                data:
+                  notification_id: "{{ notification_id }}"
   - variables:
       valid_temperatures: >
         {% set ns = namespace(values=[]) %}
