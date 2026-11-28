@@ -1,0 +1,81 @@
+blueprint:
+  name: Link Door and Window Sensors to TP-WGZBA
+  author: Sonoff
+  description: >-
+    Links door and window sensors to a SONOFF TP-WGZBA thermostat through ZHA,
+    pausing climate control while any selected sensor is open.
+    Requires a TP-WGZBA custom quirk that supports external contact sensors.
+  domain: automation
+  homeassistant:
+    min_version: 2025.4.0
+  input:
+    target_device:
+      name: TP-WGZBA device
+      description: Select the ZHA thermostat to control.
+      selector:
+        device:
+          filter:
+            - integration: zha
+              manufacturer: SONOFF
+              model: TP-WGZBA
+    contact_sensors:
+      name: Door and window sensors
+      description: Select at least one sensor. On means open; off means closed.
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: binary_sensor
+              device_class:
+                - door
+                - window
+                - opening
+
+variables:
+  target_device: !input target_device
+  contacts: !input contact_sensors
+  target_ieee: >-
+    {%- for identifier in (device_attr(target_device, 'identifiers') or []) -%}
+      {%- if identifier[0] == 'zha' -%}{{ identifier[1] }}{%- endif -%}
+    {%- endfor -%}
+
+trigger_variables:
+  contacts: !input contact_sensors
+triggers:
+  - trigger: template
+    id: open
+    value_template: >-
+      {{ contacts | select('is_state', 'on') | list | count > 0 }}
+  - trigger: template
+    id: closed
+    value_template: >-
+      {{ contacts | count > 0 and
+         contacts | select('is_state', 'off') | list | count == contacts | count }}
+  - trigger: homeassistant
+    event: start
+    id: startup
+conditions:
+  - condition: template
+    value_template: >-
+      {{ contacts | count > 0 and target_ieee | trim != '' }}
+actions:
+  # Recompute at execution time so a queued event cannot send an obsolete value.
+  - variables:
+      any_open: "{{ contacts | select('is_state', 'on') | list | count > 0 }}"
+      all_closed: >-
+        {{ contacts | select('is_state', 'off') | list | count == contacts | count }}
+  - condition: template
+    value_template: >-
+      {{ (trigger.id == 'startup' and (any_open or all_closed)) or
+         (trigger.id == 'open' and any_open) or
+         (trigger.id == 'closed' and all_closed) }}
+  - action: zha.set_zigbee_cluster_attribute
+    data:
+      ieee: "{{ target_ieee | trim }}"
+      endpoint_id: 1
+      cluster_id: 64529
+      cluster_type: in
+      attribute: 32528
+      value: "{{ 1 if any_open else 0 }}"
+mode: queued
+max: 10
