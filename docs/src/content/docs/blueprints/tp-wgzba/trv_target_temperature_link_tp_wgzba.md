@@ -1,6 +1,6 @@
 ---
 title: Link TP-WGZBA Target Temperature to TRVs
-description: Make supported ZHA radiator valves follow the target temperature set on TP-WGZBA.
+description: Make radiator valves follow the target temperature set on TP-WGZBA.
 slug: blueprints/tp-wgzba/trv_target_temperature_link_tp_wgzba
 blueprint: trv_target_temperature_link_tp_wgzba
 sidebar:
@@ -8,19 +8,16 @@ sidebar:
   order: 4
 ---
 
-Make supported ZHA radiator valves follow the target temperature set on TP-WGZBA.
+Make radiator valves follow the target temperature set on TP-WGZBA.
 
-[![Make supported ZHA radiator valves follow the target temperature set on TP-WGZBA.](/home-assistant-blueprints/diagrams/trv_target_temperature_link_tp_wgzba.svg)](/home-assistant-blueprints/diagrams/trv_target_temperature_link_tp_wgzba.svg)
+[![Make radiator valves follow the target temperature set on TP-WGZBA.](/home-assistant-blueprints/diagrams/trv_target_temperature_link_tp_wgzba.svg)](/home-assistant-blueprints/diagrams/trv_target_temperature_link_tp_wgzba.svg)
 
 ## Before you start
 
 - Home Assistant Core **2025.4.0 or later**.
-- Source: a TP-WGZBA connected through ZHA or Zigbee2MQTT.
-- Targets: **ZHA TRV-ZBL, TRV-ZBT, or TRVZB** with compatible device handlers.
+- Source: a TP-WGZBA.
+- Targets: TRV-ZBL, TRV-ZBT, or TRVZB with compatible device handlers.
 - Forwarded setpoint range: **5 to 30 °C**.
-
-Other selected models or integrations are skipped, even if listed by the selector.
-Zigbee2MQTT target valves are not supported.
 
 For TRVZB, use firmware and a ZHA quirk that expose **Panel target temperature
 linkage** and **Panel linked target temperature**. Turn on the linkage switch
@@ -36,7 +33,7 @@ the fields below and save the automation.
 | Input | What to select |
 | --- | --- |
 | **TP-WGZBA target temperature source** | Select the TP-WGZBA device that provides the target temperature. |
-| **SONOFF TRV devices** | Select one or more ZHA SONOFF TRV-ZBL, TRV-ZBT, or TRVZB valves. Other selections are skipped. |
+| **SONOFF TRV devices** | Select one or more SONOFF TRV-ZBL, TRV-ZBT, or TRVZB valves. |
 
 ## When it synchronizes
 
@@ -62,12 +59,12 @@ target** to the linked valves and refreshes it every 30 minutes while Off.
 
 ## Example
 
-Select a TP-WGZBA and two supported ZHA valves. Change the panel target from **20 °C** to **21 °C**. Both valves receive a **21 °C** setpoint. A measured room-temperature change alone does not trigger this automation.
+Select a TP-WGZBA and two target valves. Change the panel target from **20 °C** to **21 °C**. Both valves receive a **21 °C** setpoint. A measured room-temperature change alone does not trigger this automation.
 
 ## Confirm the result
 
 1. Change the TP-WGZBA target temperature to **21 °C**.
-2. Open each selected ZHA TRV-ZBL, TRV-ZBT, or TRVZB under **Settings > Devices & services**.
+2. Open each selected TRV-ZBL, TRV-ZBT, or TRVZB under **Settings > Devices & services**.
    Its climate entity should show a **21 °C target**, not a 21 °C measured room temperature.
 3. Open the automation's **Traces** and confirm the setpoint action ran for each supported valve.
 

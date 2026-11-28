@@ -26,7 +26,7 @@ the fields below and save the automation.
 
 | Input | Selection and default |
 | --- | --- |
-| **TRV-ZBT devices** | Required · one or more radiator valves; ZHA and Zigbee2MQTT targets can be mixed. |
+| **TRV-ZBT devices** | Required · one or more radiator valves. |
 | **Temperature source notifications** | Optional · off by default. Show source issues in Home Assistant. |
 | **Temperature validity period** | Optional · default **60 min**, range **1–120 min**. Applies to every source. |
 | **External temperature sensors** | Required · one or more distinct external temperature sensors. Each has equal weight. |

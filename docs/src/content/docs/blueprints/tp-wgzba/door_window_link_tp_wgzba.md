@@ -17,15 +17,11 @@ every selected sensor is closed.
 ## Before you start
 
 - Home Assistant Core **2025.4.0 or later**.
-- One TP-WGZBA connected through **ZHA**, with firmware and a custom quirk
-  that support external contact sensor input.
+- One TP-WGZBA with firmware and a compatible device handler
+  that expose external contact sensor input.
 - One or more binary sensors with the **door**, **window**, or **opening**
   device class. Their raw states must be `on` for open and `off` for closed.
   The contacts can use any integration that supplies these states.
-
-This blueprint is awaiting release. Use **Development YAML** under
-**Other download options** once the change is available on `dev`;
-the stable import becomes available after release.
 
 ## Configure the automation
 
@@ -34,7 +30,7 @@ the panel and contacts below.
 
 | Input | What to select |
 | --- | --- |
-| **TP-WGZBA device** | The ZHA panel that should receive the combined contact state. |
+| **TP-WGZBA device** | The panel that should receive the combined contact state. |
 | **Door and window sensors** | One or more door, window, or opening sensors to monitor together. |
 
 Use one contact-linking automation per panel so separate automations do not

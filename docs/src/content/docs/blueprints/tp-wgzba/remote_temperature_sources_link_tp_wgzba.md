@@ -35,7 +35,7 @@ the fields below and save the automation.
 
 | Input | What to select |
 | --- | --- |
-| **TP-WGZBA device** | Select the ZHA or Zigbee2MQTT TP-WGZBA thermostat that should receive the temperatures. |
+| **TP-WGZBA device** | Select the TP-WGZBA thermostat that should receive the temperatures. |
 | **Remote temperature source 1** | Required · a temperature sensor from another device. |
 | **Remote temperature source 2 (optional)** | Optional · default empty. With multi-source support, leave empty to unbind slot 2. |
 | **Remote temperature source 3 (optional)** | Optional · default empty. With multi-source support, leave empty to unbind slot 3. |

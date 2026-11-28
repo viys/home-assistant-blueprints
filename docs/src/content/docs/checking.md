@@ -9,8 +9,8 @@ and inspect the automation trace.
 ## The target device is missing
 
 Check that it is paired through an integration supported by your chosen blueprint
-and has the correct model. The device guide describes source and target support
-separately where they differ.
+and has the correct model. Check the guide's **Compatibility** table for
+source and target support.
 
 ## A source is unavailable
 
@@ -22,8 +22,8 @@ For optional humidity, choose a relative humidity sensor.
 
 1. Confirm the automation is saved and enabled.
 2. Check the target's external temperature setting where required.
-3. Check the guide's supported integration, firmware, converter or quirk, and
-   source count.
+3. Check the guide's **Compatibility** table, then its firmware, handler or
+   converter requirements and source count.
 4. Cause a real source update and open **Traces** on the automation. For target
    temperature linking, change the selected source device's setpoint instead.
 5. Check that another automation is not overwriting the target reading.

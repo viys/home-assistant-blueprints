@@ -31,7 +31,7 @@ the fields below and save the automation.
 
 | Input | What to select |
 | --- | --- |
-| **SNZB-02DR2 device** | Select the ZHA or Zigbee2MQTT SNZB-02DR2 to receive the reading. |
+| **SNZB-02DR2 device** | Select the SNZB-02DR2 to receive the reading. |
 | **External temperature sensor** | Required. Select a temperature sensor from a different device. |
 | **External humidity sensor (optional)** | Select a relative humidity sensor from a different device. |
 | **Remote slot** | Slot 1 or Slot 2. Default: **Slot 1**. |

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="760" viewBox="0 0 760 508" role="img" aria-labelledby="title desc">
   <title id="title">Keep each room temperature separate</title>
-  <desc id="desc">Three illustrative readings, 20, 22 and 21 degrees Celsius, pass separately through Home Assistant into TP-WGZBA remote inputs 1, 2 and 3. Home Assistant does not calculate an average. Source 1 is required; sources 2 and 3 are optional and unused optional inputs are unbound with multi-source support. Compatible firmware and integration support are required for all three inputs; older support uses source 1. The input list is schematic, not the physical display.</desc>
+  <desc id="desc">Three illustrative readings, 20, 22 and 21 degrees Celsius, pass separately through Home Assistant into TP-WGZBA remote inputs 1, 2 and 3. Home Assistant does not calculate an average. Source 1 is required; sources 2 and 3 are optional and unused optional inputs are unbound with multi-source support. Source-slot configuration is explained in the guide. The input list is schematic, not the physical display.</desc>
   <style>text { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif; }</style>
   <defs>
     <marker id="arrow" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto" markerUnits="userSpaceOnUse">
@@ -10,7 +10,7 @@
   <rect width="760" height="508" fill="white"/>
   <!-- Shared header; functional layouts below vary by blueprint behavior. -->
   <text x="380" y="40" font-size="22" fill="#183642" font-weight="600" text-anchor="middle">Keep each room temperature separate</text>
-<text x="380" y="66" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">TP-WGZBA · ZHA or Zigbee2MQTT · Up to three sources</text>
+<text x="380" y="66" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">TP-WGZBA · Up to three sources</text>
 
   <rect x="275" y="105" width="180" height="275" rx="16" fill="#edf9fe" stroke="none" />
 <rect x="495" y="105" width="240" height="275" rx="16" fill="white" stroke="#96b8c8" />
@@ -41,5 +41,5 @@
 <text x="365" y="405" font-size="13" fill="#007fa8" font-weight="600" text-anchor="middle">Forward individually</text>
 <path d="M25 431 L735 431" fill="none" stroke="#dce8ee" stroke-width="1.5"/>
 <text x="380" y="459" font-size="14" fill="#183642" font-weight="600" text-anchor="middle">Home Assistant forwards each reading without averaging.</text>
-<text x="380" y="483" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">Multi-source support required; older support uses source 1. Enable external mode.</text>
+<text x="380" y="483" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">Enable external mode. See the guide for source-slot configuration.</text>
 </svg>

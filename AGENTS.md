@@ -119,6 +119,10 @@ design). Preserve the compact Integration / Status layout, original-color
 List every device model separately where source and target support differs;
 use Dev only for unreleased support. Use status labels only; do not add prose
 notes below compatibility tables.
+Maintain platform support and release status only in `blueprint-compatibility.json`.
+Do not duplicate them in guide prose, input tables, or device overviews; refer
+to the shared compatibility table. Keep setup requirements and behavioral
+differences in the guide.
 Keep platform PNG assets optimized to 56 × 56 px for 28 px display.
 Link diagrams through the image itself; omit separate full-size text links. Keep the
 site light, maintain mobile readability, and do not duplicate the table in

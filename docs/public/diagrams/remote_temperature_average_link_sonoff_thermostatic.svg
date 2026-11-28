@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="760" viewBox="0 0 760 620" role="img" aria-labelledby="title desc">
   <title id="title">One temperature average for your SONOFF devices</title>
-  <desc id="desc">Two external sensors read 20 and 22 degrees Celsius. Home Assistant calculates their equal-weight average of 21 degrees, then forwards that measured external temperature to one or more selected TRVZB, TRV-ZBT, TRV-ZBL or TP-WGZBA devices through ZHA or Zigbee2MQTT. Models and integrations can be mixed. External mode is required; invalid, expired and selected-target sources are excluded. Device drawings are schematic, not physical displays or heating setpoints.</desc>
+  <desc id="desc">Two external sensors read 20 and 22 degrees Celsius. Home Assistant calculates their equal-weight average of 21 degrees, then forwards that measured external temperature to one or more selected TRVZB, TRV-ZBT, TRV-ZBL or TP-WGZBA devices. Models can be mixed. External mode is required; invalid, expired and selected-target sources are excluded. Device drawings are schematic, not physical displays or heating setpoints.</desc>
   <style>
     text { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif; text-anchor: middle; fill: #183642; }
     .muted { fill: #526b76; font-size: 13px; }
@@ -84,5 +84,5 @@
   <text x="465" y="538" class="label">TRV-ZBL</text>
   <text x="635" y="538" class="label">TP-WGZBA</text>
   <text x="380" y="568" font-size="15" class="temperature">Each selected device receives a 21 °C external reading</text>
-  <text x="380" y="595" class="muted">ZHA or Zigbee2MQTT · Mixed targets · External mode required</text>
+  <text x="380" y="595" class="muted">Mixed targets · External mode required</text>
 </svg>

@@ -35,8 +35,8 @@ the features needed by your chosen blueprint.
 
 ## Check device support
 
-1. Read the selected blueprint's **Before you start** section for supported
-   integrations, firmware requirements, and required device features.
+1. Check the selected guide's **Compatibility** table for platform support.
+   Read **Before you start** for firmware requirements and device settings.
 2. Open the target under **Settings > Devices & services**. For Zigbee2MQTT,
    also check the device's **Exposes** tab. Confirm the required inputs and
    settings are available; labels vary by integration and language.

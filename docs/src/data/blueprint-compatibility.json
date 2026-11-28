@@ -4,7 +4,7 @@
       "Target device"
     ],
     "zha": [
-      "dev_only"
+      "supported"
     ],
     "zigbee2mqtt": [
       "not_supported"
@@ -120,7 +120,7 @@
       "supported",
       "supported",
       "supported",
-      "dev_only"
+      "supported"
     ],
     "zigbee2mqtt": [
       "supported",
@@ -137,16 +137,16 @@
       "TP-WGZBA"
     ],
     "zha": [
-      "dev_only",
-      "dev_only",
-      "dev_only",
-      "dev_only"
+      "supported",
+      "supported",
+      "supported",
+      "supported"
     ],
     "zigbee2mqtt": [
-      "dev_only",
-      "dev_only",
-      "dev_only",
-      "dev_only"
+      "supported",
+      "supported",
+      "supported",
+      "supported"
     ]
   }
 }

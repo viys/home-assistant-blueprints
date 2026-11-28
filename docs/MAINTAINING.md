@@ -47,7 +47,10 @@ arrays (supported, limited, experimental, dev_only, not_supported). Use status
 labels only; do not add prose notes below compatibility tables.
 Check both stable and development YAML when updating claims. Use Dev only for
 support available in dev but not master, and update that status on stable release.
-Keep platform-specific setup in the guide.
+Keep platform-specific setup and behavioral differences in the guide. Do not
+repeat platform support or release status in guide prose, input tables, or
+device overviews; refer to the shared compatibility table. Release preparation
+updates status labels in this JSON only.
 
 
 ### Compatibility table design
@@ -105,8 +108,9 @@ integration/handler or converter revision, firmware, and observed result.
 Offline tests check the known selector version boundary and guide metadata
 consistency; they are not a substitute for HA schema and hardware validation.
 
-Use overview tables to compare source/target counts, integrations, and where
-averaging happens. Keep parameter tables concise; put expiration rules and
+Use overview tables to compare source/target counts and where averaging happens;
+refer to each guide's compatibility table for platform support. Keep parameter
+tables concise; put expiration rules and
 other behavior in dedicated sections. Place synchronization triggers next to
 configuration and make verification steps describe an observable device result.
 Use Home Assistant's official `https://my.home-assistant.io/badges/blueprint_import.svg`

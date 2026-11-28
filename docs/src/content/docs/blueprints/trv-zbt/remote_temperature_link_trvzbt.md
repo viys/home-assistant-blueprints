@@ -35,7 +35,7 @@ the fields below and save the automation.
 
 | Input | What to select |
 | --- | --- |
-| **TRV-ZBT device** | Select the ZHA or Zigbee2MQTT radiator valve that should receive the temperature. |
+| **TRV-ZBT device** | Select the radiator valve that should receive the temperature. |
 | **External temperature sensor** | Select a temperature sensor from another device. The target TRV-ZBT's own temperature is not a valid source. |
 
 ## When it synchronizes
