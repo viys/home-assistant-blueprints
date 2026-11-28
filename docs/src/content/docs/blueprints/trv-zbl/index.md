@@ -10,10 +10,21 @@ Send separate temperature readings to a TRV-ZBL valve. The valve can calculate t
 
 ## Choose your blueprint
 
+To share one HA average across different SONOFF models, use
+[Shared average temperature](../sonoff-thermostatic/remote_temperature_average_link_sonoff_thermostatic/)
+(**Core 2025.10.0+**, development YAML). It supports one or more targets, including
+mixed ZHA and Zigbee2MQTT devices.
+
 | Integration | Sources → targets | Calculation | Blueprint |
 | --- | --- | --- | --- |
 | ZHA | 1–5 distinct sensors → 1 valve | The valve averages the readings | [Remote temperature sources](./remote_temperature_link_trv_zbl/) |
 | Zigbee2MQTT | 1 sensor → 1 valve | Source 1 only | [Remote temperature sources](./remote_temperature_link_trv_zbl/) |
+
+## HA or valve averaging?
+
+The shared average blueprint calculates one reading in Home Assistant and can
+send it to multiple models. The model-specific remote-sources blueprint keeps readings
+separate for averaging inside one valve through compatible ZHA support.
 
 ## Before you choose
 

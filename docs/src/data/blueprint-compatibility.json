@@ -117,5 +117,26 @@
       "not_supported",
       "not_supported"
     ]
+  },
+  "remote_temperature_average_link_sonoff_thermostatic": {
+    "columns": [
+      "TRVZB",
+      "TRV-ZBT",
+      "TRV-ZBL",
+      "TP-WGZBA"
+    ],
+    "zha": [
+      "dev_only",
+      "dev_only",
+      "dev_only",
+      "dev_only"
+    ],
+    "zigbee2mqtt": [
+      "dev_only",
+      "dev_only",
+      "dev_only",
+      "dev_only"
+    ],
+    "note": "Development YAML only until release. TRV-ZBL requires a compatible ZHA handler or Zigbee2MQTT converter for a single external input."
   }
 }

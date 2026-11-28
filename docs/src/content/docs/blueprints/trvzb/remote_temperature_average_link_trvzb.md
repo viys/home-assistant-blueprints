@@ -27,6 +27,7 @@ the fields below and save the automation.
 | Input | Selection and default |
 | --- | --- |
 | **TRVZB devices** | Required · one or more radiator valves; ZHA and Zigbee2MQTT targets can be mixed. |
+| **Temperature source notifications** | Optional · off by default. Show source issues in Home Assistant. |
 | **Temperature validity period** | Optional · default **60 min**, range **1–120 min**. Applies to every source. |
 | **External temperature sensors** | Required · one or more distinct external temperature sensors. Each has equal weight. |
 
@@ -49,6 +50,15 @@ checked every minute; Home Assistant restarts may extend validity.
 
 Select one or more valves. Each must have external mode enabled; unavailable
 or failed targets do not prevent the others from receiving the average.
+
+## Source notifications
+
+Enable **Temperature source notifications** for an English persistent notification
+listing unavailable, invalid, or expired sources. It clears automatically when
+no issues remain. Selected targets' own sensors are excluded from alerts.
+After turning notifications off, reload automations to clear an existing alert.
+
+For mixed device models, use [Shared average temperature](../../sonoff-thermostatic/remote_temperature_average_link_sonoff_thermostatic/).
 
 ## Example
 

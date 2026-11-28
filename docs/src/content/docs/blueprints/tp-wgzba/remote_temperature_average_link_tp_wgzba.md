@@ -27,6 +27,7 @@ the fields below and save the automation.
 | Input | Selection and default |
 | --- | --- |
 | **TP-WGZBA device** | Required · one thermostat. |
+| **Temperature source notifications** | Optional · off by default. Show source issues in Home Assistant. |
 | **Temperature validity period** | Optional · default **60 min**, range **1–120 min**. Applies to every source. |
 | **External temperature sensors** | Required · one or more distinct external temperature sensors. Each has equal weight. |
 
@@ -46,6 +47,15 @@ until one returns.
 The validity period measures time since the temperature **state last changed**.
 Identical reports and attribute-only updates do not renew it. Expiration is
 checked every minute; Home Assistant restarts may extend validity.
+
+## Source notifications
+
+Enable **Temperature source notifications** for an English persistent notification
+listing unavailable, invalid, or expired sources. It clears automatically when
+no issues remain. Selected targets' own sensors are excluded from alerts.
+After turning notifications off, reload automations to clear an existing alert.
+
+For mixed device models, use [Shared average temperature](../../sonoff-thermostatic/remote_temperature_average_link_sonoff_thermostatic/).
 
 ## Example
 

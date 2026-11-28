@@ -10,6 +10,11 @@ Choose how the panel receives measured temperatures, or forward its setpoint to 
 
 ## Choose your blueprint
 
+To share one HA average across different SONOFF models, use
+[Shared average temperature](../sonoff-thermostatic/remote_temperature_average_link_sonoff_thermostatic/)
+(**Core 2025.10.0+**, development YAML). It supports one or more targets, including
+mixed ZHA and Zigbee2MQTT devices.
+
 | You want to… | Sources → targets | Integration | Blueprint |
 | --- | --- | --- | --- |
 | Use one room sensor | 1 sensor → 1 panel | ZHA / Zigbee2MQTT | [One temperature source](./remote_temperature_link_tp_wgzba/) |
@@ -25,6 +30,8 @@ remote slots; older firmware or converters support source 1 only.
 
 Use one measured-temperature synchronization automation per panel.
 Target-temperature linking can serve a different purpose: it forwards the
-**desired setpoint**, not a measured room temperature.
+**desired setpoint**, not a measured room temperature. In Off mode it forwards
+the panel's available frost protection target and refreshes it every 30 minutes.
 
-**Minimum Home Assistant Core: 2025.4.0.** [Check integration and device support](../../getting-started/#check-device-support) before importing.
+**Minimum Home Assistant Core: 2025.4.0** for the model-specific blueprints;
+**2025.10.0** for the shared average blueprint. [Check integration and device support](../../getting-started/#check-device-support) before importing.

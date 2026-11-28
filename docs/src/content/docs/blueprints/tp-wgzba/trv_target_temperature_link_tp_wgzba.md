@@ -25,7 +25,7 @@ Zigbee2MQTT target valves are not supported.
 For TRVZB, use firmware and a ZHA quirk that expose **Panel target temperature
 linkage** and **Panel linked target temperature**. Turn on the linkage switch
 before forwarding panel targets. Turning it on does not send a cached target;
-the next panel setpoint change supplies the temperature. This is separate from
+the next panel change or an Off-mode refresh supplies the temperature. This is separate from
 the external room-temperature sensor feature.
 
 ## Configure the automation
@@ -40,7 +40,25 @@ the fields below and save the automation.
 
 ## When it synchronizes
 
-When the panel target temperature changes. Turning on TRVZB linkage, saving the automation, restarting Home Assistant, and changing only the measured temperature do not trigger an initial setpoint broadcast.
+When the panel target temperature changes, when the panel enters or leaves
+**Off**, and when its frost protection setting changes while Off. While Off,
+the frost protection target is also refreshed every **30 minutes** (on the hour
+and half-hour).
+
+Turning on linkage, saving the automation, restarting Home Assistant, and
+changing only the measured temperature do not trigger an initial broadcast.
+While Off, the next scheduled refresh can send the frost target.
+
+## Off mode and frost protection
+
+Off mode forwards the panel's available **frost protection temperature** as the
+valve target; it does not turn the valves off. Leaving Off forwards the current
+heating setpoint again. Each forwarded value must remain within **5–30 °C**.
+If the frost setting is missing, ambiguous, unavailable, or nonnumeric, forwarding
+is skipped and a warning is recorded in Home Assistant's system log.
+
+For example, entering Off with frost protection set to **7 °C** sends a **7 °C
+target** to the linked valves and refreshes it every 30 minutes while Off.
 
 ## Example
 
@@ -54,6 +72,8 @@ Select a TP-WGZBA and two supported ZHA valves. Change the panel target from **2
 3. Open the automation's **Traces** and confirm the setpoint action ran for each supported valve.
 
 Saving alone does not broadcast a setpoint; change the panel target to test it.
+Also enter Off and check that the valves receive the configured frost target,
+then leave Off and confirm they receive the heating setpoint again.
 
 See [Check your automation](../../../checking/) and
 [Update a blueprint](../../../updating/) for the common procedures.

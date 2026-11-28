@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="760" viewBox="0 0 760 595" role="img" aria-labelledby="title desc">
   <title id="title">Set once on the panel, follow on three valves</title>
-  <desc id="desc">A target temperature change on TP-WGZBA is forwarded through Home Assistant to TRV-ZBL, TRV-ZBT and TRVZB valves. All three show the same 21 degree target. Only panel setpoint changes trigger forwarding; measured room-temperature changes do not. Integration and setup requirements are explained in the guide.</desc>
+  <desc id="desc">A target temperature change on TP-WGZBA is forwarded through Home Assistant to TRV-ZBL, TRV-ZBT and TRVZB valves. All three show the same 21 degree target. Panel setpoint changes and entering or leaving Off trigger forwarding. While Off, the frost protection target is sent and refreshed every 30 minutes; measured room-temperature changes do not trigger forwarding. Integration and setup requirements are explained in the guide.</desc>
   <style>text { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif; text-anchor: middle; }</style>
   <defs>
     <marker id="arrow" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto" markerUnits="userSpaceOnUse">
@@ -61,5 +61,5 @@
   </g>
   <path d="M25 520 L735 520" fill="none" stroke="#dce8ee" stroke-width="1.5"/>
   <text x="380" y="548" font-size="14" fill="#183642" font-weight="600">A new 21 °C panel target becomes a 21 °C target on each valve.</text>
-  <text x="380" y="572" font-size="12" fill="#526b76">Runs when the panel setpoint changes; measured temperature changes do not trigger it.</text>
+  <text x="380" y="572" font-size="12" fill="#526b76">Off mode sends the frost target and refreshes it every 30 minutes.</text>
 </svg>

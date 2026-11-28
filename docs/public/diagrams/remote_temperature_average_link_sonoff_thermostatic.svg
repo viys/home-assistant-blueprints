@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" viewBox="0 0 760 620" role="img" aria-labelledby="title desc">
+  <title id="title">One temperature average for your SONOFF devices</title>
+  <desc id="desc">Two external sensors read 20 and 22 degrees Celsius. Home Assistant calculates their equal-weight average of 21 degrees, then forwards that measured external temperature to one or more selected TRVZB, TRV-ZBT, TRV-ZBL or TP-WGZBA devices through ZHA or Zigbee2MQTT. Models and integrations can be mixed. External mode is required; invalid, expired and selected-target sources are excluded. Device drawings are schematic, not physical displays or heating setpoints.</desc>
+  <style>
+    text { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif; text-anchor: middle; fill: #183642; }
+    .muted { fill: #526b76; font-size: 13px; }
+    .label { font-size: 15px; font-weight: 600; }
+    .temperature { fill: #007fa8; font-weight: 600; }
+    .body { fill: white; stroke: #96b8c8; stroke-width: 1.3; }
+    .detail { fill: none; stroke: #b6cdd8; stroke-width: 1.3; stroke-linecap: round; }
+    .flow { fill: none; stroke: #1abcf2; stroke-width: 1.5; marker-end: url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L8 4 L0 8 L2 4 Z" fill="#1abcf2"/>
+    </marker>
+    <!-- Room sensor: 140 × 80, with a measured-temperature display. -->
+    <symbol id="room-sensor" viewBox="0 0 140 80">
+      <rect x="1" y="1" width="138" height="78" rx="14" class="body"/>
+      <rect x="12" y="12" width="116" height="48" rx="7" fill="#edf9fe"/>
+      <circle cx="70" cy="69" r="2.5" fill="#b6cdd8"/>
+    </symbol>
+  </defs>
+  <rect width="760" height="620" fill="white"/>
+  <text x="380" y="40" font-size="23" font-weight="600">One temperature average for your SONOFF devices</text>
+  <text x="380" y="68" class="muted">External sensors → Home Assistant → Selected devices</text>
+
+  <!-- Source sensors: x=170..310 and 450..590, y=114..194. -->
+  <text x="240" y="99" class="muted">Sensor 1</text>
+  <text x="520" y="99" class="muted">Sensor 2</text>
+  <use href="#room-sensor" x="170" y="114" width="140" height="80"/>
+  <use href="#room-sensor" x="450" y="114" width="140" height="80"/>
+  <text x="240" y="161" font-size="29" class="temperature">20 °C</text>
+  <text x="520" y="161" font-size="29" class="temperature">22 °C</text>
+
+  <!-- Converge at the HA calculation, with clear space at each endpoint. -->
+  <path d="M240 199 C240 207 300 205 300 213" class="flow"/>
+  <path d="M520 199 C520 207 460 205 460 213" class="flow"/>
+  <!-- Calculation card: x=230..530, y=224..360. -->
+  <rect x="230" y="224" width="300" height="136" rx="18" fill="#edf9fe"/>
+  <text x="380" y="253" class="label">Home Assistant</text>
+  <text x="380" y="278" class="muted">Equal-weight average · (20 + 22) ÷ 2</text>
+  <text x="380" y="330" font-size="46" class="temperature">21 °C</text>
+
+  <!-- Fan out to four schematic devices; any subset may be selected. -->
+  <path d="M255 365 C255 390 125 380 125 408" class="flow"/>
+  <path d="M338 365 C338 390 295 380 295 408" class="flow"/>
+  <path d="M422 365 C422 390 465 380 465 408" class="flow"/>
+  <path d="M505 365 C505 390 635 380 635 408" class="flow"/>
+
+  <!-- TRVZB: cylindrical valve, x=91..159, y=419..511. -->
+  <g transform="translate(125 419)">
+    <ellipse cx="0" cy="10" rx="34" ry="10" fill="#f1f7fa" stroke="#96b8c8" stroke-width="1.3"/>
+    <path d="M-34 10 V65 Q-34 79 0 79 Q34 79 34 65 V10" class="body"/>
+    <rect x="-25" y="25" width="50" height="28" rx="5" fill="#edf9fe"/>
+    <path d="M-16 63 V68 M-5 63 V68 M6 63 V68 M17 63 V68" class="detail"/>
+    <rect x="-19" y="79" width="38" height="13" rx="3" fill="#f1f7fa" stroke="#96b8c8"/>
+  </g>
+  <!-- TRV-ZBT: rounded valve, x=261..329, y=419..511. -->
+  <g transform="translate(295 419)">
+    <rect x="-34" width="68" height="79" rx="19" class="body"/>
+    <path d="M-23 12 Q0 5 23 12" class="detail"/>
+    <rect x="-25" y="25" width="50" height="28" rx="5" fill="#edf9fe"/>
+    <circle cy="65" r="4" fill="none" stroke="#b6cdd8" stroke-width="1.3"/>
+    <rect x="-19" y="79" width="38" height="13" rx="3" fill="#f1f7fa" stroke="#96b8c8"/>
+  </g>
+  <!-- TRV-ZBL: valve with control ring, x=431..499, y=419..511. -->
+  <g transform="translate(465 419)">
+    <rect x="-34" width="68" height="79" rx="17" class="body"/>
+    <path d="M-33 16 H33" class="detail"/>
+    <rect x="-25" y="26" width="50" height="28" rx="5" fill="#edf9fe"/>
+    <path d="M-17 65 H17" class="detail"/>
+    <rect x="-19" y="79" width="38" height="13" rx="3" fill="#f1f7fa" stroke="#96b8c8"/>
+  </g>
+  <!-- TP-WGZBA: wall panel, x=587..683, y=419..511. -->
+  <g transform="translate(635 419)">
+    <rect x="-48" width="96" height="92" rx="12" class="body"/>
+    <rect x="-37" y="11" width="74" height="52" rx="5" fill="#edf9fe"/>
+    <path d="M-23 29 H-8 M-23 39 H15 M-23 49 H3" class="detail"/>
+    <circle cy="77" r="5" fill="none" stroke="#b6cdd8" stroke-width="1.3"/>
+  </g>
+  <text x="125" y="538" class="label">TRVZB</text>
+  <text x="295" y="538" class="label">TRV-ZBT</text>
+  <text x="465" y="538" class="label">TRV-ZBL</text>
+  <text x="635" y="538" class="label">TP-WGZBA</text>
+  <text x="380" y="568" font-size="15" class="temperature">Each selected device receives a 21 °C external reading</text>
+  <text x="380" y="595" class="muted">ZHA or Zigbee2MQTT · Mixed targets · External mode required</text>
+</svg>
