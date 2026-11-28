@@ -24,6 +24,7 @@ export default defineConfig({
       sidebar: [
         { label: 'Choose a blueprint', slug: 'index' },
         { label: 'Start using a blueprint', slug: 'getting-started' },
+        { label: 'Shared temperature', items: [{ autogenerate: { directory: 'blueprints/sonoff-thermostatic' } }] },
         { label: 'TP-WGZBA', items: [{ autogenerate: { directory: 'blueprints/tp-wgzba' } }] },
         { label: 'TRVZB', items: [{ autogenerate: { directory: 'blueprints/trvzb' } }] },
         { label: 'TRV-ZBL', items: [{ autogenerate: { directory: 'blueprints/trv-zbl' } }] },

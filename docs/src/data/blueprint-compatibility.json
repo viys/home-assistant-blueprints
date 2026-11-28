@@ -1,4 +1,15 @@
 {
+  "door_window_link_tp_wgzba": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "dev_only"
+    ],
+    "zigbee2mqtt": [
+      "not_supported"
+    ]
+  },
   "remote_source_link_snzb02dr2": {
     "columns": [
       "Target device"
@@ -116,6 +127,26 @@
       "not_supported",
       "not_supported",
       "not_supported"
+    ]
+  },
+  "remote_temperature_average_link_sonoff_thermostatic": {
+    "columns": [
+      "TRVZB",
+      "TRV-ZBT",
+      "TRV-ZBL",
+      "TP-WGZBA"
+    ],
+    "zha": [
+      "dev_only",
+      "dev_only",
+      "dev_only",
+      "dev_only"
+    ],
+    "zigbee2mqtt": [
+      "dev_only",
+      "dev_only",
+      "dev_only",
+      "dev_only"
     ]
   }
 }

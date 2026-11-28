@@ -30,6 +30,4 @@ class BlueprintCompatibilityTests(unittest.TestCase):
                     self.assertIsInstance(entry[platform], list)
                     self.assertEqual(len(entry[platform]), len(entry["columns"]))
                     self.assertTrue(set(entry[platform]) <= STATUSES)
-                if "note" in entry:
-                    self.assertIsInstance(entry["note"], str)
-                    self.assertTrue(entry["note"].strip())
+                self.assertNotIn("note", entry, "Compatibility uses status labels without prose notes")

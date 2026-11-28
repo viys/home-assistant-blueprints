@@ -12,14 +12,17 @@ guide from import to your first working automation.
 ## Find your device
 
 <CardGrid>
-  <LinkCard title="TP-WGZBA" description="Sync a room temperature, an average, or separate sources. Link the panel setpoint to supported valves." href="./blueprints/tp-wgzba/" />
+  <LinkCard title="TP-WGZBA" description="Sync temperatures, link the panel setpoint to valves, or pause when a door or window opens." href="./blueprints/tp-wgzba/" />
   <LinkCard title="TRVZB" description="Send room readings to radiator valves, or link their target setpoint to a panel." href="./blueprints/trvzb/" />
-  <LinkCard title="TRV-ZBL" description="Send up to five temperature sources through ZHA, or one through Zigbee2MQTT." href="./blueprints/trv-zbl/" />
+  <LinkCard title="TRV-ZBL" description="Use valve-side averaging through ZHA, or share an HA average with other models." href="./blueprints/trv-zbl/" />
   <LinkCard title="TRV-ZBT" description="Use one external reading, or send a calculated average to one or more valves." href="./blueprints/trv-zbt/" />
   <LinkCard title="SNZB-02DR2" description="Supply temperature and optional humidity to either remote slot." href="./blueprints/snzb02dr2/" />
 </CardGrid>
 
 ## Choose the behavior
+
+For a shared average across device models, see
+[Shared average temperature](./blueprints/sonoff-thermostatic/remote_temperature_average_link_sonoff_thermostatic/).
 
 | You want to… | Look for… |
 | --- | --- |
@@ -27,6 +30,7 @@ guide from import to your first working automation.
 | Combine several sensors into one reading | **Average temperature**: Home Assistant averages valid readings. |
 | Keep several temperature sources separate | **Remote temperature sources**: individual readings go to supported device slots. |
 | Make valves follow the panel setting | **Target temperature**: the desired temperature is forwarded, rather than a measured reading. |
+| Pause climate control when a door or window opens | **Door and window sensors**: selected contacts supply one combined open or closed input. |
 
 Source counts and behavior depend on the device, firmware, and integration.
 Each guide explains its ZHA and Zigbee2MQTT support before you import.
