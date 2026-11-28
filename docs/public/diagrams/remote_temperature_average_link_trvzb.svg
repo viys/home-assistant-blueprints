@@ -10,7 +10,7 @@
   <rect width="760" height="493" fill="white"/>
   <!-- Shared header; functional layouts below vary by blueprint behavior. -->
   <text x="380" y="40" font-size="22" fill="#183642" font-weight="600" text-anchor="middle">Let several rooms contribute one temperature</text>
-<text x="380" y="66" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">TRVZB · ZHA or Zigbee2MQTT · Average calculated in Home Assistant</text>
+<text x="380" y="66" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">TRVZB · Average calculated in Home Assistant</text>
 
   <rect x="265" y="105" width="220" height="286" rx="18" fill="#edf9fe" stroke="none" />
 <text x="375" y="134" font-size="16" fill="#183642" font-weight="600" text-anchor="middle">Home Assistant</text>

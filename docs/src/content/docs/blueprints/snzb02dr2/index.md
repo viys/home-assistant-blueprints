@@ -10,9 +10,9 @@ Supply external temperature and optional humidity to remote slot 1 or 2 on SNZB-
 
 ## Choose your blueprint
 
-| You want to… | Sources → targets | Integration | Blueprint |
-| --- | --- | --- | --- |
-| Supply readings to a remote slot | Required temperature + optional humidity → 1 slot on 1 device | ZHA / Zigbee2MQTT | [Remote temperature and humidity](./remote_source_link_snzb02dr2/) |
+| You want to… | Sources → targets | Blueprint |
+| --- | --- | --- |
+| Supply readings to a remote slot | Required temperature + optional humidity → 1 slot on 1 device | [Remote temperature and humidity](./remote_source_link_snzb02dr2/) |
 
 ## Two rooms, two slots
 

@@ -10,7 +10,7 @@
   <rect width="760" height="496" fill="white"/>
   <!-- Shared header; functional layouts below vary by blueprint behavior. -->
   <text x="380" y="40" font-size="22" fill="#183642" font-weight="600" text-anchor="middle">Supply a remote temperature and humidity</text>
-<text x="380" y="66" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">SNZB-02DR2 · ZHA or Zigbee2MQTT · One automation per remote slot</text>
+<text x="380" y="66" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">SNZB-02DR2 · One automation per remote slot</text>
 
   <rect x="275" y="105" width="180" height="259" rx="16" fill="#edf9fe" stroke="none" />
 <rect x="495" y="105" width="240" height="259" rx="16" fill="white" stroke="#96b8c8" />

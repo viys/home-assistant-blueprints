@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="760" viewBox="0 0 760 617" role="img" aria-labelledby="title desc">
   <title id="title">Let the valve combine room readings</title>
-  <desc id="desc">Top lane: with compatible ZHA firmware and device support, one to five source readings pass separately through Home Assistant. A two-source example of 20 and 22 degrees is averaged by the TRV-ZBL valve to 21 degrees. Bottom lane: Zigbee2MQTT uses source 1 only and forwards its 20 degree reading. This blueprint does not calculate an average in Home Assistant. Enable external mode. The valve validates numeric temperature readings.</desc>
+  <desc id="desc">Top lane: multiple source readings pass separately through Home Assistant. A two-source example of 20 and 22 degrees is averaged by the TRV-ZBL valve to 21 degrees. Bottom lane: a single source forwards its 20 degree reading. This blueprint does not calculate an average in Home Assistant. Enable external mode. The valve validates numeric temperature readings.</desc>
   <style>text { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif; }</style>
   <defs>
     <marker id="arrow" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto" markerUnits="userSpaceOnUse">
@@ -10,12 +10,12 @@
   <rect width="760" height="617" fill="white"/>
   <!-- Shared header; functional layouts below vary by blueprint behavior. -->
   <text x="380" y="40" font-size="22" fill="#183642" font-weight="600" text-anchor="middle">Let the valve combine room readings</text>
-<text x="380" y="66" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">TRV-ZBL · Averaging location and source count depend on integration</text>
+<text x="380" y="66" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">TRV-ZBL · Separate readings reach the valve</text>
 
   <rect x="25" y="100" width="710" height="211" rx="16" fill="#f4fafe" stroke="none" />
 <rect x="25" y="336" width="710" height="179" rx="16" fill="#f7f9fa" stroke="none" />
-<text x="45" y="127" font-size="15" fill="#007fa8" font-weight="600" text-anchor="start">ZHA · 1–5 sources</text>
-<text x="45" y="364" font-size="15" fill="#007fa8" font-weight="600" text-anchor="start">Zigbee2MQTT · Source 1 only</text>
+<text x="45" y="127" font-size="15" fill="#007fa8" font-weight="600" text-anchor="start">Multiple remote sources</text>
+<text x="45" y="364" font-size="15" fill="#007fa8" font-weight="600" text-anchor="start">One remote source</text>
 <text x="135" y="177" font-size="18" fill="#007fa8" font-weight="600" text-anchor="middle">Room A: 20 °C</text>
 <text x="135" y="229" font-size="18" fill="#007fa8" font-weight="600" text-anchor="middle">Room B: 22 °C</text>
 <text x="135" y="280" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">Two-source example</text>
@@ -53,6 +53,6 @@
 <rect x="603" y="461" width="44" height="13" rx="3" fill="#edf3f6" stroke="#96b8c8" />
 <text x="625" y="500" font-size="13" fill="#526b76" font-weight="400" text-anchor="middle">One remote reading</text>
 <path d="M25 540 L735 540" fill="none" stroke="#dce8ee" stroke-width="1.5"/>
-<text x="380" y="568" font-size="14" fill="#183642" font-weight="600" text-anchor="middle">With ZHA, readings stay separate until they reach the valve.</text>
-<text x="380" y="592" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">ZHA multi-source support required. Enable external mode; ZHA removes invalid sources.</text>
+<text x="380" y="568" font-size="14" fill="#183642" font-weight="600" text-anchor="middle">Readings stay separate until they reach the valve.</text>
+<text x="380" y="592" font-size="12" fill="#526b76" font-weight="400" text-anchor="middle">Enable external mode. See the guide for source-slot configuration.</text>
 </svg>

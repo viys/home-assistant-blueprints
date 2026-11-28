@@ -24,10 +24,6 @@ can be mixed in the same automation.
   accepts a single external temperature input. Its separate multi-source feature
   is not used by this blueprint.
 
-This blueprint is a development addition. Until it is released, use **Dev YAML**
-under **Other download options** for manual import; the stable import button
-becomes usable after release. See [Update a blueprint](../../../updating/).
-
 ## Configure the automation
 
 Follow [the import and creation steps](../../../getting-started/), then set:
@@ -37,7 +33,7 @@ Follow [the import and creation steps](../../../getting-started/), then set:
 | **Temperature source notifications** | Optional · off by default. Show source issues in Home Assistant. |
 | **Temperature validity period** | Default **60 min**, range **1–120 min**, shared by all sources. |
 | **External temperature sensors** | One or more sensors, each counted once with equal weight. |
-| **SONOFF thermostatic devices** | One or more supported devices; models and ZHA / Zigbee2MQTT targets can be mixed. |
+| **SONOFF thermostatic devices** | One or more target devices; models can be mixed. |
 
 When replacing an existing temperature automation, disable it before enabling
 this one. Sensors belonging to **any** selected target are excluded from the

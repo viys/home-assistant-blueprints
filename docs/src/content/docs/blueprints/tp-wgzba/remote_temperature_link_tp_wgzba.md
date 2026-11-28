@@ -33,7 +33,7 @@ the fields below and save the automation.
 
 | Input | What to select |
 | --- | --- |
-| **TP-WGZBA device** | Select the ZHA or Zigbee2MQTT thermostat that should receive the temperature. |
+| **TP-WGZBA device** | Select the thermostat that should receive the temperature. |
 | **External temperature sensor** | Select a temperature sensor from another device. The target TP-WGZBA's own temperature is not a valid source. |
 
 ## When it synchronizes

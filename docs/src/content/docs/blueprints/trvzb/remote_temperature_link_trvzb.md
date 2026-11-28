@@ -1,6 +1,6 @@
 ---
 title: Sync Remote Temperature to TRVZB
-description: Send one room temperature to one or more TRVZB valves, through ZHA or Zigbee2MQTT.
+description: Send one room temperature to one or more TRVZB valves.
 slug: blueprints/trvzb/remote_temperature_link_trvzb
 blueprint: remote_temperature_link_trvzb
 sidebar:
@@ -8,9 +8,9 @@ sidebar:
   order: 1
 ---
 
-Send one room temperature to one or more TRVZB valves, through ZHA or Zigbee2MQTT.
+Send one room temperature to one or more TRVZB valves.
 
-[![Send one room temperature to one or more TRVZB valves, through ZHA or Zigbee2MQTT.](/home-assistant-blueprints/diagrams/remote_temperature_link_trvzb.svg)](/home-assistant-blueprints/diagrams/remote_temperature_link_trvzb.svg)
+[![Send one room temperature to one or more TRVZB valves.](/home-assistant-blueprints/diagrams/remote_temperature_link_trvzb.svg)](/home-assistant-blueprints/diagrams/remote_temperature_link_trvzb.svg)
 
 ## Before you start
 
@@ -19,8 +19,7 @@ Send one room temperature to one or more TRVZB valves, through ZHA or Zigbee2MQT
 - Select sensors from other devices, with numeric temperatures in °C, °F, or K.
 - Enable external temperature mode. Use one temperature synchronization automation per target.
 
-Both integrations require external mode on each selected valve. One automation
-can serve multiple valves, including a mixture of ZHA and Zigbee2MQTT devices.
+One automation can serve multiple valves. Enable external mode on each valve.
 Unavailable or failed valves do not prevent updates to the others.
 
 ## Configure the automation
@@ -30,7 +29,7 @@ the fields below and save the automation.
 
 | Input | What to select |
 | --- | --- |
-| **TRVZB devices** | Required · one or more ZHA or Zigbee2MQTT TRVZB valves in external mode. |
+| **TRVZB devices** | Required · one or more TRVZB valves in external mode. |
 | **External temperature sensor** | Select a temperature sensor from another device. Temperatures from any selected TRVZB are not valid sources. |
 
 ## When it synchronizes
