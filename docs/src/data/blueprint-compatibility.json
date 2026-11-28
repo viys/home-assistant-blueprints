@@ -8,8 +8,7 @@
     ],
     "zigbee2mqtt": [
       "not_supported"
-    ],
-    "note": "Awaiting release. Requires TP-WGZBA firmware and a custom ZHA quirk with external contact sensor support. Contact sensors may use any integration."
+    ]
   },
   "remote_source_link_snzb02dr2": {
     "columns": [
@@ -148,7 +147,6 @@
       "dev_only",
       "dev_only",
       "dev_only"
-    ],
-    "note": "Development YAML only until release. TRV-ZBL requires a compatible ZHA handler or Zigbee2MQTT converter for a single external input."
+    ]
   }
 }

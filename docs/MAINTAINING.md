@@ -43,7 +43,8 @@ Keep the title equal to `blueprint.name` and document integration differences.
 Maintain platform status in `src/data/blueprint-compatibility.json`, keyed by the
 blueprint stem. The shared title renders the compatibility table automatically.
 Each entry declares device-role columns and aligned ZHA and Zigbee2MQTT status
-arrays (supported, limited, experimental, dev_only, not_supported), plus an optional note.
+arrays (supported, limited, experimental, dev_only, not_supported). Use status
+labels only; do not add prose notes below compatibility tables.
 Check both stable and development YAML when updating claims. Use Dev only for
 support available in dev but not master, and update that status on stable release.
 Keep platform-specific setup in the guide.
@@ -69,8 +70,8 @@ the same compatibility presentation.
   Limited support and Dev only; neutral with a diamond for Experimental. Always retain
   readable text alongside the symbol.
 - Vertically align names, logos, and statuses; keep status labels on one line.
-  Allow horizontal scrolling on narrow screens. Omit generic disclaimers and
-  repeated explanations; add a note only for an essential, unique prerequisite.
+  Allow horizontal scrolling on narrow screens. Keep prerequisites in the guide;
+  do not repeat status labels in explanatory notes below the table.
 - Keep the JSON metadata as the single source of compatibility status. Do not
   duplicate tables in Markdown or add custom fields to automation YAML.
 - Store official platform logos locally under `docs/public/icons/`; resolve

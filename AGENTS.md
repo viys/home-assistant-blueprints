@@ -117,7 +117,8 @@ central JSON metadata described in `docs/MAINTAINING.md` (Compatibility table
 design). Preserve the compact Integration / Status layout, original-color
 28 px circular ZHA and Zigbee2MQTT logos, and labeled circular status indicators.
 List every device model separately where source and target support differs;
-use Dev only for unreleased support. Omit generic compatibility disclaimers.
+use Dev only for unreleased support. Use status labels only; do not add prose
+notes below compatibility tables.
 Keep platform PNG assets optimized to 56 × 56 px for 28 px display.
 Link diagrams through the image itself; omit separate full-size text links. Keep the
 site light, maintain mobile readability, and do not duplicate the table in
