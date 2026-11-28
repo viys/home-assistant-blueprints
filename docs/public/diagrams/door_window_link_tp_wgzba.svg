@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" viewBox="0 0 760 435" role="img" aria-labelledby="title desc">
+  <title id="title">Open a door, pause the thermostat</title>
+  <desc id="desc">An open door and a closed window feed contact states to Home Assistant. Home Assistant combines one or more selected contacts and sends open or closed to one TP-WGZBA. Any open contact can pause the panel; only all contacts closed clears the open input. Changes while a contact remains open do not resend open. The panel displays OP during contact pause. Device drawings are schematic.</desc>
+  <style>
+    text { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif; text-anchor: middle; fill: #183642; }
+    .secondary { fill: #526b76; font-size: 13px; }
+    .label { fill: #526b76; font-size: 15px; font-weight: 500; }
+    .display { fill: #007fa8; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L8 4 L0 8 L2 4 Z" fill="#1abcf2"/>
+    </marker>
+  </defs>
+  <rect width="760" height="435" fill="white"/>
+  <text x="380" y="40" font-size="22" font-weight="600">Open a door, pause the thermostat</text>
+  <text x="380" y="66" class="secondary">1+ door or window contacts · Home Assistant · 1 panel</text>
+
+  <!-- Contact scenes occupy x=70..180; labels are below the devices. -->
+  <text x="120" y="108" class="label">Selected contacts</text>
+  <path d="M70 215 V135 H130 V215" fill="none" stroke="#96b8c8" stroke-width="2"/>
+  <path d="M75 140 L112 128 V223 L75 212 Z" fill="#edf9fe" stroke="#007fa8" stroke-width="1.5"/>
+  <circle cx="101" cy="178" r="2.5" fill="#007fa8"/>
+  <rect x="140" y="160" width="10" height="28" rx="4" fill="white" stroke="#96b8c8"/>
+  <rect x="160" y="160" width="9" height="28" rx="4" fill="white" stroke="#96b8c8"/>
+  <text x="120" y="245" class="label">Door open</text>
+
+  <rect x="70" y="275" width="110" height="66" rx="2" fill="#edf9fe" stroke="#96b8c8" stroke-width="1.5"/>
+  <path d="M125 275 V341 M70 308 H180" fill="none" stroke="#96b8c8" stroke-width="1.5"/>
+  <path d="M78 283 H117 V300 H78 Z M133 283 H172 V300 H133 Z M78 316 H117 V333 H78 Z M133 316 H172 V333 H133 Z" fill="white"/>
+  <rect x="110" y="294" width="9" height="26" rx="3" fill="white" stroke="#007fa8"/>
+  <rect x="122" y="294" width="7" height="26" rx="3" fill="white" stroke="#007fa8"/>
+  <text x="120" y="367" class="label">Window closed</text>
+
+  <!-- Inputs converge on HA; no text containers are used for the logic. -->
+  <path d="M185 174 C250 174 275 225 335 225" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <path d="M185 308 C250 308 275 255 335 255" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <circle cx="380" cy="240" r="34" fill="#edf9fe"/>
+  <path d="M361 239 L380 223 L399 239 M367 235 V256 H393 V235 M376 256 V243 H384 V256" fill="none" stroke="#007fa8" stroke-width="2" stroke-linejoin="round"/>
+  <text x="380" y="300" class="label">Home Assistant</text>
+  <text x="380" y="323" class="secondary">Combine contact states</text>
+  <path d="M419 240 L534 240" fill="none" stroke="#1abcf2" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="477" y="213" class="secondary">Open / closed</text>
+
+  <!-- Physical panel x=545..705, y=180..306; screen shows OP. -->
+  <text x="625" y="148" class="label">TP-WGZBA</text>
+  <rect x="545" y="180" width="160" height="126" rx="15" fill="white" stroke="#96b8c8"/>
+  <rect x="559" y="194" width="132" height="75" rx="7" fill="#edf9fe"/>
+  <text x="625" y="215" font-size="13" class="display">Contact pause</text>
+  <text x="625" y="254" font-size="32" font-weight="500" class="display">OP</text>
+  <circle cx="625" cy="287" r="8" fill="white" stroke="#96b8c8"/>
+  <text x="625" y="336" class="secondary">Any open → pause</text>
+  <text x="625" y="358" class="secondary">All closed → clear input</text>
+
+  <path d="M25 391 L735 391" stroke="#dce8ee"/>
+  <text x="380" y="410" class="secondary">No repeated open write while a contact stays open</text>
+</svg>

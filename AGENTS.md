@@ -163,11 +163,17 @@ report the missing skill; its source is
 [bybit-exchange/svg-diagram](https://github.com/bybit-exchange/svg-diagram).
 
 The primary purpose of each blueprint SVG is to explain its function to users.
+Use device or scene illustrations, state symbols, and arrows instead of rounded
+text-box flowcharts. Reserve containers for real groupings or boundaries;
+skill examples do not require boxes. Keep detailed explanations in the guide.
+Keep integration names (ZHA, Zigbee2MQTT) and implementation terms such as
+quirks in the guide, not in SVGs.
 Check the blueprint and matching guide first. Show where readings originate,
 what is calculated or forwarded, and which devices receive which values.
 Distinguish HA averaging from device-side averaging, separate remote inputs
 from a combined reading, and measured temperatures from target setpoints.
-Make relevant integration limits, optional inputs, and multiple targets clear.
+Make source/target limits, optional inputs, and multiple targets clear;
+explain integration requirements in the guide.
 Use different layouts where behaviors differ rather than repeating one generic
 three-box flow. Render and inspect every changed SVG for readable labels,
 accurate connections, overlap, clipping, and desktop/mobile presentation.

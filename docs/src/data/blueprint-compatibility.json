@@ -1,4 +1,16 @@
 {
+  "door_window_link_tp_wgzba": {
+    "columns": [
+      "Target device"
+    ],
+    "zha": [
+      "dev_only"
+    ],
+    "zigbee2mqtt": [
+      "not_supported"
+    ],
+    "note": "Awaiting release. Requires TP-WGZBA firmware and a custom ZHA quirk with external contact sensor support. Contact sensors may use any integration."
+  },
   "remote_source_link_snzb02dr2": {
     "columns": [
       "Target device"
